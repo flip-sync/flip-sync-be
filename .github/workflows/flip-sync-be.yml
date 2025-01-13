@@ -69,7 +69,7 @@ jobs:
           # rsa 키 생성
           # github secrets에 등록된 key를 .ssh/id_rsa에 저장
           
-          echo "${{ secrets.SERVER_PRICATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SERVER_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           echo "${{ secrets.SERVER_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa
           chmod 644 ~/.ssh/id_rsa.pub
