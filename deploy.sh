@@ -95,7 +95,6 @@ URL="https://hub.docker.com/v2/repositories/$NAMESPACE/$REPO_NAME/tags"
 BEFORE_TAG=$(curl -s -H "Authorization: Bearer $TOKEN" "$URL" | jq -r '
            .results[].name' | grep -v '^latest$' | sort -n | tail -2 | head -1)
 
-
 # 결과 출력
 echo "Before Tag: $BEFORE_TAG"
 echo "Live color tag: $BEFORE_TAG"
