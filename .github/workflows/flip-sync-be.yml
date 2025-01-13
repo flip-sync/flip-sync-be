@@ -22,13 +22,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Check out another private repo (same org)
-        uses: actions/checkout@v3
-        with:
-          repository: flip-sync/flip-sync-be-yml
-          ref: main
-          path: flip-sync-server/src/main/resources
-          token: ${{ secrets.SECRET_TOKEN }}
+      - name: Checkout private repository
+        run: |
+          git clone https://x-access-token:${{ secrets.SECRET_TOKEN }}@github.com/flip-sync/flip-sync-yml.git
+          cd flip-sync-yml
+          cp * ../flip-sync-server/src/main/resources/
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
