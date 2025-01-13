@@ -53,14 +53,14 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ./${{ env.SERVICE_NAME }}
           
-          docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ secrets.run_number }}
+          docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ github.run_number }}
           docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
           
-          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ secrets.run_number }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ github.run_number }}
           docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
           
           docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local
-          docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ secrets.run_number }}
+          docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ github.run_number }}
           docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
         shell: bash
 
