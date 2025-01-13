@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 env:
-  SERVICE_NAME: flip-sync-be
+  SERVICE_NAME: flip-sync-server
 
   BLUE_PORT: 48122
   GREEN_PORT: 38122
@@ -26,7 +26,6 @@ jobs:
         run: |
           git clone https://x-access-token:${{ secrets.SECRET_TOKEN }}@github.com/flip-sync/flip-sync-be-yml.git
           cd flip-sync-be-yml
-          pwd
           sudo cp * ../flip-sync-server/src/main/resources/
 
       - name: Set up JDK 17
