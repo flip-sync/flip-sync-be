@@ -25,8 +25,8 @@ jobs:
       - name: Checkout private repository
         run: |
           git clone https://x-access-token:${{ secrets.SECRET_TOKEN }}@github.com/flip-sync/flip-sync-be-yml.git
-          sudo mkdir -p /flip-sync-server/src/main/resources
           cd flip-sync-be-yml
+          pwd
           sudo cp * ../flip-sync-server/src/main/resources/
 
       - name: Set up JDK 17
