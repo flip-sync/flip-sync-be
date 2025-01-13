@@ -28,7 +28,7 @@ jobs:
           repository: flip-sync/flip-sync-be-yml
           ref: main
           path: flip-sync-server/src/main/resources
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.GITHUB_TOKEN }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -46,22 +46,22 @@ jobs:
 
       - name: Log in to Docker Hub
         run: |
-          echo "${{ github.DOCKER_TOKEN }}" | docker login -u ${{ github.DOCKER_USERNAME }} --password-stdin
+          echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
         shell: bash
 
       - name: Build and push Docker image
         run: |
-          docker build -t ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ./${{ env.SERVICE_NAME }}
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ./${{ env.SERVICE_NAME }}
           
-          docker tag ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ github.run_number }}
-          docker tag ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
+          docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ secrets.run_number }}
+          docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
           
-          docker push ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ github.run_number }}
-          docker push ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ secrets.run_number }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
           
-          docker image rm ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local
-          docker image rm ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ github.run_number }}
-          docker image rm ${{ github.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
+          docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local
+          docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ secrets.run_number }}
+          docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
         shell: bash
 
       - name: Deploy to Server
@@ -71,27 +71,27 @@ jobs:
           # rsa 키 생성
           # github secrets에 등록된 key를 .ssh/id_rsa에 저장
           
-          echo "${{ github.SERVER_PRICATE_KEY }}" > ~/.ssh/id_rsa
-          echo "${{ github.SERVER_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
+          echo "${{ secrets.SERVER_PRICATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SERVER_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa
           chmod 644 ~/.ssh/id_rsa.pub
           
           
           # known_hosts 파일에 내용 추가 (서버의 공개키 등록)
-          ssh-keyscan -H ${{ github.SERVER_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
           
           # PROJECT_DIR 정의
-          PROJECT_DIR=/home/${{ github.SERVER_USERNAME }}/docker/${{ env.SERVICE_NAME }}
+          PROJECT_DIR=/home/${{ secrets.SERVER_USERNAME }}/docker/${{ env.SERVICE_NAME }}
           
           # 서버에 디렉토리 생성 및 권한 설정
-          ssh ${{ github.SERVER_USERNAME }}@${{ github.SERVER_IP }} "sudo mkdir -p $PROJECT_DIR && sudo chmod -R 755 $PROJECT_DIR"
+          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "sudo mkdir -p $PROJECT_DIR && sudo chmod -R 755 $PROJECT_DIR"
           
           # 소유권 변경
-          ssh ${{ github.SERVER_USERNAME }}@${{ github.SERVER_IP }} "sudo chown -R ${{ github.SERVER_USERNAME }}:${{ github.SERVER_USERNAME }} $PROJECT_DIR"
+          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "sudo chown -R ${{ secrets.SERVER_USERNAME }}:${{ secrets.SERVER_USERNAME }} $PROJECT_DIR"
           
           # deploy.sh 파일 전송
-          scp ./deploy.sh ${{ github.SERVER_USERNAME }}@${{ github.SERVER_IP }}:$PROJECT_DIR
+          scp ./deploy.sh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }}:$PROJECT_DIR
           
           # deploy.sh 실행
-          ssh -T ${{ github.SERVER_USERNAME }}@${{ github.SERVER_IP }} "set -e; sudo bash $PROJECT_DIR/deploy.sh ${{ env.SERVICE_NAME }} $PROJECT_DIR '${{ env.BLUE_PORT }}' '${{ env.GREEN_PORT }}' '${{ env.INNER_PORT }}' '${{ env.TIME_DELATE }}' '${{ github.DOCKER_USERNAME }}' '${{ github.DOCKER_TOKEN }}' '${{ github.NGINX_DOMAIN }}' ''"
+          ssh -T ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "set -e; sudo bash $PROJECT_DIR/deploy.sh ${{ env.SERVICE_NAME }} $PROJECT_DIR '${{ env.BLUE_PORT }}' '${{ env.GREEN_PORT }}' '${{ env.INNER_PORT }}' '${{ env.TIME_DELATE }}' '${{ secrets.DOCKER_USERNAME }}' '${{ secrets.DOCKER_TOKEN }}' '${{ secrets.NGINX_DOMAIN }}' ''"
         shell: bash
