@@ -1,4 +1,4 @@
-name: alert-server CI
+name: flip-sync-server CI
 
 on:
 #  pull_request:
