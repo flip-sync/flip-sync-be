@@ -1,10 +1,10 @@
-package com.zeki.flipsyncserver.log
+package com.zeki.flipsyncserver.config.log
 
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import ch.qos.logback.core.LayoutBase
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.zeki.flipsyncserver.log.GoogleChatWebhookDto
+import com.zeki.flipsyncserver.config.log.GoogleChatWebhookDto
 import io.netty.util.internal.logging.MessageFormatter
 import java.io.IOException
 import java.io.OutputStream

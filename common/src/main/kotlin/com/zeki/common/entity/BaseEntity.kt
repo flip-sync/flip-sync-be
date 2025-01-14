@@ -26,10 +26,10 @@ abstract class BaseEntity {
 
     @LastModifiedDate
     @Column(
-        name = "updated_at",
+        name = "modified_at",
         nullable = false,
         columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
     )
-    var updatedAt: LocalDateTime = LocalDateTime.now()
+    var modifiedAt: LocalDateTime = LocalDateTime.now()
         protected set
 }

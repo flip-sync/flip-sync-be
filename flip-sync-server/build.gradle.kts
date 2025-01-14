@@ -12,6 +12,12 @@ dependencies {
     // test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
+    // security
+    api("org.springframework.boot:spring-boot-starter-security")
+
+    // mailer
+    api("org.springframework.boot:spring-boot-starter-mail")
+
     // db
     runtimeOnly("com.mysql:mysql-connector-j")
     testRuntimeOnly("com.h2database:h2")

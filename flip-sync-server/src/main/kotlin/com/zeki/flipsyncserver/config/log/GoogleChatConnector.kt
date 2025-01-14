@@ -1,4 +1,4 @@
-package com.zeki.flipsyncserver.log
+package com.zeki.flipsyncserver.config.log
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.zeki.common.exception.ApiException

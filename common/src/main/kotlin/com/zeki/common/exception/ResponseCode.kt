@@ -20,12 +20,14 @@ enum class ResponseCode(
 
     /* 401 */
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "401_0", "인증 정보가 없습니다."),
+    EMAIL_VERIFY_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "401_1", "인증 코드가 유효하지 않습니다."),
 
     /* 403 */
     UNMODIFIABLE_INFORMATION(HttpStatus.FORBIDDEN, "403_0", "변경할 수 없는 정보입니다."),
 
     /* 404 */
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "404_0", "데이터가 존재하지 않습니다."),
+    EMAIL_VERIFY_NOT_FOUND(HttpStatus.NOT_FOUND, "404_1", "이메일 인증 정보가 존재하지 않습니다."),
 
     /* 409 Conflict - 클라이언트의 요청이 서버에서 충돌을 일으킨 경우 사용 */
     CONFLICT_DATA(HttpStatus.CONFLICT, "409_0", "데이터가 충돌되었습니다."),

@@ -1,4 +1,4 @@
-package com.zeki.flipsyncserver.log
+package com.zeki.flipsyncserver.config.log
 
 data class GoogleChatWebhookDto(
     val text: String,
