@@ -18,8 +18,7 @@ class EmailService(
         helper.setSubject(title)
         helper.setText(html, true) // HTML 내용을 true로 설정
 
-        // TODO : 발신자 이메일 변경
-        helper.setFrom("") // 발신자 이메일 설정
+        helper.setFrom("flipsync.score@gmail.com") // 발신자 이메일 설정
 
         emailSender.send(message) // 이메일 발송
     }

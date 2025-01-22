@@ -44,6 +44,7 @@ class SecurityConfig() {
             "/error",
 
             "/user/**",
+            "/test/**",
 
             "/webchatws/**"
         )
