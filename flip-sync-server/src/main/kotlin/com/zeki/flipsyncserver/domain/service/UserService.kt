@@ -7,6 +7,8 @@ import com.zeki.flipsyncdb.entity.User
 import com.zeki.flipsyncdb.repository.EmailVerifyRepository
 import com.zeki.flipsyncdb.repository.UserRepository
 import com.zeki.flipsyncserver.domain.dto.request.UserSignupReqDto
+import com.zeki.flipsyncserver.domain.dto.request.UserVerifyEmailReqDto
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -14,12 +16,18 @@ import java.time.LocalDateTime
 @Service
 class UserService(
     private val userRepository: UserRepository,
-    private val emailVerifyRepository: EmailVerifyRepository
+    private val getUserEntityService: GetUserEntityService,
+    private val emailVerifyRepository: EmailVerifyRepository,
+    private val passwordEncoder: PasswordEncoder,
+
+    private val emailService: EmailService
 ) {
 
     @Transactional
     fun signup(reqDto: UserSignupReqDto): Long {
-        val userEntity = User.create(reqDto.email, reqDto.name)
+        val user = getUserEntityService.getUserNullable(reqDto.email)
+        if (user != null) throw ApiException(ResponseCode.CONFLICT_DATA)
+        val userEntity = User.create(reqDto.email, passwordEncoder.encode(reqDto.password), reqDto.name)
 
         return userRepository.save(userEntity).id!!
     }
@@ -34,8 +42,7 @@ class UserService(
         val emailVerify = EmailVerify.create(email, this.createCode(), LocalDateTime.now().plusMinutes(5))
 
         emailVerifyRepository.save(emailVerify)
-
-        // TODO : 메일러 연동 및 메일 전~
+        emailService.sendEmail(email, emailVerify.code)
     }
 
     private fun createCode(): String {
@@ -43,16 +50,15 @@ class UserService(
     }
 
     @Transactional
-    fun checkVerifyEmail(email: String, code: String) {
-        val emailVerify = emailVerifyRepository.findByEmail(email)
-        if (emailVerify == null) {
-            throw ApiException(ResponseCode.EMAIL_VERIFY_NOT_FOUND)
-        }
-
-        if (emailVerify.code != code) {
-            throw ApiException(ResponseCode.EMAIL_VERIFY_UNAUTHORIZED)
-        }
-
+    fun checkVerifyEmail(reqDto: UserVerifyEmailReqDto) {
+        val emailVerify = emailVerifyRepository.findByEmail(reqDto.email)
+        if (emailVerify == null) throw ApiException(ResponseCode.EMAIL_VERIFY_NOT_FOUND)
+        if (emailVerify.code != reqDto.code) throw ApiException(ResponseCode.EMAIL_VERIFY_UNAUTHORIZED)
     }
 
+    @Transactional(readOnly = true)
+    fun login(email: String, password: String): Unit {
+        val user = userRepository.findByUsername(email) ?: throw ApiException(ResponseCode.RESOURCE_NOT_FOUND)
+        if (!passwordEncoder.matches(password, user.password)) throw ApiException(ResponseCode.UNAUTHORIZED)
+    }
 }

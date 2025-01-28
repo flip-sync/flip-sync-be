@@ -21,11 +21,12 @@ dependencies {
     // db
     runtimeOnly("com.mysql:mysql-connector-j")
     testRuntimeOnly("com.h2database:h2")
-
-    // swagger
-    api("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
-
     // logback & webclient
     api("io.netty:netty-all") // mac
     api("io.micrometer:micrometer-core") // mac
+
+    //jwt
+    api("io.jsonwebtoken:jjwt-api:0.11.2")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.2")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.2")
 }

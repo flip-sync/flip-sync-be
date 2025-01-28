@@ -2,12 +2,16 @@ package com.zeki.common.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.zeki.common.exception.ResponseCode
+import io.swagger.v3.oas.annotations.media.Schema
 import java.io.Serializable
 
 data class CommonResDto<T>(
-    val code: String,
-    val message: String,
+    @Schema(description = "결과 코드", example = "200_0")
+    val code: String = ResponseCode.OK.code,
+    @Schema(description = "결과 메시지", example = "정상 처리 되었습니다.")
+    val message: String = ResponseCode.OK.defaultMessage,
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Schema(description = "실제 데이터 필드", required = false)
     var data: T? = null
 ) : Serializable {
 

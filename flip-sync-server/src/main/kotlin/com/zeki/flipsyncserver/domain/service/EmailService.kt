@@ -9,7 +9,14 @@ import org.springframework.stereotype.Service
 class EmailService(
     private val emailSender: JavaMailSender
 ) {
-    fun sendEmail(email: String, title: String, html: String) {
+    fun sendEmail(email: String, code: String) {
+        val title = "[플립싱크] 회원가입 인증 코드"
+        val html = """
+            <h1>플립싱크 회원가입 인증 코드</h1>
+            <p>아래의 인증 코드를 입력해주세요.</p>
+            <p>인증 코드 : ${code}</p>
+            <p>감사합니다.</p>
+            """
         val message: MimeMessage = emailSender.createMimeMessage()
 
         // MimeMessageHelper를 사용해 HTML 이메일 구성

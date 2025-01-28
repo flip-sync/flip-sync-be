@@ -21,6 +21,10 @@ dependencies {
     //validation
     api("org.springframework.boot:spring-boot-starter-validation")
 
+    // swagger
+    api("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.3")
+
+
     // querydsl
     api("com.querydsl:querydsl-core:5.1.0")
     api("com.querydsl:querydsl-jpa:5.1.0:jakarta")

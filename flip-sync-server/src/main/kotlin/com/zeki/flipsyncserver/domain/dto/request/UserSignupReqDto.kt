@@ -25,6 +25,7 @@ data class UserSignupReqDto(
 ) {
 
     @AssertTrue(message = "비밀번호가 일치하지 않습니다.")
+    @Schema(hidden = true)
     fun isPasswordMatch(): Boolean {
         return password == passwordConfirm
     }
