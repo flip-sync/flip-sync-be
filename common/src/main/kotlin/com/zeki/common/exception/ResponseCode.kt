@@ -28,7 +28,8 @@ enum class ResponseCode(
     ACCESS_DENIED(HttpStatus.UNAUTHORIZED, "401_5", "접근 권한이 없습니다."),
 
     /* 403 */
-    UNMODIFIABLE_INFORMATION(HttpStatus.FORBIDDEN, "403_0", "변경할 수 없는 정보입니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "403_0", "접근 권한이 없습니다."),
+    UNMODIFIABLE_INFORMATION(HttpStatus.FORBIDDEN, "403_1", "변경할 수 없는 정보입니다."),
 
     /* 404 */
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "404_0", "데이터가 존재하지 않습니다."),

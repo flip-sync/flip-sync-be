@@ -1,14 +1,17 @@
 package com.zeki.flipsyncserver.domain.controller
 
 import com.zeki.common.dto.CommonResDto
+import com.zeki.flipsyncserver.domain.dto.request.TokenReqDto
 import com.zeki.flipsyncserver.domain.dto.request.UserLoginReqDto
 import com.zeki.flipsyncserver.domain.dto.request.UserSignupReqDto
 import com.zeki.flipsyncserver.domain.dto.request.UserVerifyEmailReqDto
+import com.zeki.flipsyncserver.domain.dto.response.TokenResDto
 import com.zeki.flipsyncserver.domain.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 
@@ -30,7 +33,7 @@ class UserController(
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
     fun signup(
-        @RequestBody reqDto: UserSignupReqDto
+        @Valid @RequestBody reqDto: UserSignupReqDto
     ): CommonResDto<Long> {
 
         val data = userService.signup(reqDto)
@@ -88,8 +91,24 @@ class UserController(
     @ResponseStatus(HttpStatus.OK)
     fun login(
         @RequestBody reqDto: UserLoginReqDto
-    ): CommonResDto<String> {
-        userService.login(reqDto.email, reqDto.password)
-        return CommonResDto.success()
+    ): CommonResDto<TokenResDto> {
+        val data = userService.login(reqDto.email, reqDto.password)
+        return CommonResDto.success(data)
+    }
+
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "401", ref = "#/components/responses/EXPIRED_TOKEN"),
+            ApiResponse(responseCode = "403", ref = "#/components/responses/FORBIDDEN"),
+        ]
+    )
+    @Operation(summary = "로그인 (리프레시 토큰)", description = "", security = [])
+    @PostMapping("/login/refresh")
+    @ResponseStatus(HttpStatus.OK)
+    fun loginRefresh(
+        @RequestBody reqDto: TokenReqDto
+    ): CommonResDto<TokenResDto> {
+        val data = userService.loginRefresh(reqDto.refreshToken)
+        return CommonResDto.success(data)
     }
 }

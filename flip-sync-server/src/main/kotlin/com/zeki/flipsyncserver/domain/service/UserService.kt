@@ -6,8 +6,10 @@ import com.zeki.flipsyncdb.entity.EmailVerify
 import com.zeki.flipsyncdb.entity.User
 import com.zeki.flipsyncdb.repository.EmailVerifyRepository
 import com.zeki.flipsyncdb.repository.UserRepository
+import com.zeki.flipsyncserver.config.security.jwt.JwtTokenProvider
 import com.zeki.flipsyncserver.domain.dto.request.UserSignupReqDto
 import com.zeki.flipsyncserver.domain.dto.request.UserVerifyEmailReqDto
+import com.zeki.flipsyncserver.domain.dto.response.TokenResDto
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,6 +21,7 @@ class UserService(
     private val getUserEntityService: GetUserEntityService,
     private val emailVerifyRepository: EmailVerifyRepository,
     private val passwordEncoder: PasswordEncoder,
+    private val jwtTokenProvider: JwtTokenProvider,
 
     private val emailService: EmailService
 ) {
@@ -56,9 +59,15 @@ class UserService(
         if (emailVerify.code != reqDto.code) throw ApiException(ResponseCode.EMAIL_VERIFY_UNAUTHORIZED)
     }
 
-    @Transactional(readOnly = true)
-    fun login(email: String, password: String): Unit {
+    @Transactional
+    fun login(email: String, password: String): TokenResDto {
         val user = userRepository.findByUsername(email) ?: throw ApiException(ResponseCode.RESOURCE_NOT_FOUND)
         if (!passwordEncoder.matches(password, user.password)) throw ApiException(ResponseCode.UNAUTHORIZED)
+
+        return jwtTokenProvider.createToken(user)
+    }
+
+    fun loginRefresh(refreshToken: String): TokenResDto {
+        return jwtTokenProvider.regenerateAccessToken(refreshToken) ?: throw ApiException(ResponseCode.UNAUTHORIZED)
     }
 }

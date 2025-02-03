@@ -10,7 +10,7 @@ data class CommonResDto<T>(
     val code: String = ResponseCode.OK.code,
     @Schema(description = "결과 메시지", example = "정상 처리 되었습니다.")
     val message: String = ResponseCode.OK.defaultMessage,
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @field:JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "실제 데이터 필드", required = false)
     var data: T? = null
 ) : Serializable {

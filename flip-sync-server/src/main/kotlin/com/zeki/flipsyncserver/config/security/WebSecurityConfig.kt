@@ -28,7 +28,7 @@ class WebSecurityConfig(
         val configuration = CorsConfiguration()
         configuration.allowedOrigins = listOf(
             "https://cdiptangshu.github.io",
-            "https://localhost:3000",
+            "http://localhost:3000",
             "https://www.flip-sync.com",
             "https://flip-sync.com"
         )
@@ -50,7 +50,7 @@ class WebSecurityConfig(
             "/error",
 
             "/user/**",
-            "/test/**",
+//            "/test/**",
 
             "/webchatws/**"
         )

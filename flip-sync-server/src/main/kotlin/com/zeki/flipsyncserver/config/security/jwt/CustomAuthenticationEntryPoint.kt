@@ -19,13 +19,13 @@ class CustomAuthenticationEntryPoint : AuthenticationEntryPoint {
         val exception = request.getAttribute("exception") as String?
 
         when (exception) {
-            null -> setResponse(response, ResponseCode.UNAUTHORIZED)
+            null -> this.setResponse(response, ResponseCode.UNAUTHORIZED)
 
-            ResponseCode.UNAUTHORIZED.code -> setResponse(response, ResponseCode.UNAUTHORIZED)
-            ResponseCode.WRONG_TYPE_TOKEN.code -> setResponse(response, ResponseCode.WRONG_TYPE_TOKEN)
-            ResponseCode.EXPIRED_TOKEN.code -> setResponse(response, ResponseCode.EXPIRED_TOKEN)
-            ResponseCode.UNSUPPORTED_TOKEN.code -> setResponse(response, ResponseCode.UNSUPPORTED_TOKEN)
-            else -> setResponse(response, ResponseCode.ACCESS_DENIED)
+            ResponseCode.UNAUTHORIZED.code -> this.setResponse(response, ResponseCode.UNAUTHORIZED)
+            ResponseCode.WRONG_TYPE_TOKEN.code -> this.setResponse(response, ResponseCode.WRONG_TYPE_TOKEN)
+            ResponseCode.EXPIRED_TOKEN.code -> this.setResponse(response, ResponseCode.EXPIRED_TOKEN)
+            ResponseCode.UNSUPPORTED_TOKEN.code -> this.setResponse(response, ResponseCode.UNSUPPORTED_TOKEN)
+            else -> this.setResponse(response, ResponseCode.ACCESS_DENIED)
         }
     }
 

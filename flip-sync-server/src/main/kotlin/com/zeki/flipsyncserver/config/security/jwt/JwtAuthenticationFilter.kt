@@ -19,8 +19,10 @@ class JwtAuthenticationFilter(
     val ATTRIBUTE_NAME: String = "exception"
 
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
-        val token: String? = jwtTokenProvider.resolveToken(request as HttpServletRequest)
-
+        var token: String? = jwtTokenProvider.resolveToken(request as HttpServletRequest)
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7)
+        }
 
         try {
             when {

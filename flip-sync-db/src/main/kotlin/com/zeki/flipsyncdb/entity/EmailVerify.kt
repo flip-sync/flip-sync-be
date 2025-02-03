@@ -16,15 +16,19 @@ class EmailVerify private constructor(
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     var status: Status = status
+        protected set
 
     @Column(name = "email", nullable = false, length = 50)
     var email: String = email
+        protected set
 
     @Column(name = "code", nullable = false, length = 7)
     var code: String = code
+        protected set
 
     @Column(name = "expired_at", nullable = false)
     var expiredAt: LocalDateTime = expiredAt
+        protected set
 
     companion object {
         fun create(email: String, code: String, expiredAt: LocalDateTime): EmailVerify {
