@@ -31,7 +31,6 @@ class UserController(
     )
     @Operation(summary = "회원가입", description = "", security = [])
     @PostMapping("/signup")
-    @ResponseStatus(HttpStatus.CREATED)
     fun signup(
         @Valid @RequestBody reqDto: UserSignupReqDto
     ): CommonResDto<Long> {
@@ -50,7 +49,6 @@ class UserController(
     )
     @Operation(summary = "이메일 인증 요청", description = "", security = [])
     @GetMapping("/verify-email")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun verifyEmail(
         @RequestParam email: String
     ): CommonResDto<Unit> {
@@ -69,7 +67,6 @@ class UserController(
     )
     @Operation(summary = "이메일 인증 확인", description = "", security = [])
     @PostMapping("/verify-email/check")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun verifyEmailCheck(
         @RequestBody reqDto: UserVerifyEmailReqDto
     ): CommonResDto<Unit> {
@@ -104,7 +101,6 @@ class UserController(
     )
     @Operation(summary = "로그인 (리프레시 토큰)", description = "", security = [])
     @PostMapping("/login/refresh")
-    @ResponseStatus(HttpStatus.OK)
     fun loginRefresh(
         @RequestBody reqDto: TokenReqDto
     ): CommonResDto<TokenResDto> {
