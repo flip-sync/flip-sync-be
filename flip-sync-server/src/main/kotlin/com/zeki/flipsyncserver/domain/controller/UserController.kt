@@ -1,10 +1,7 @@
 package com.zeki.flipsyncserver.domain.controller
 
 import com.zeki.common.dto.CommonResDto
-import com.zeki.flipsyncserver.domain.dto.request.TokenReqDto
-import com.zeki.flipsyncserver.domain.dto.request.UserLoginReqDto
-import com.zeki.flipsyncserver.domain.dto.request.UserSignupReqDto
-import com.zeki.flipsyncserver.domain.dto.request.UserVerifyEmailReqDto
+import com.zeki.flipsyncserver.domain.dto.request.*
 import com.zeki.flipsyncserver.domain.dto.response.TokenResDto
 import com.zeki.flipsyncserver.domain.service.UserService
 import io.swagger.v3.oas.annotations.Operation
@@ -106,5 +103,20 @@ class UserController(
     ): CommonResDto<TokenResDto> {
         val data = userService.loginRefresh(reqDto.refreshToken)
         return CommonResDto.success(data)
+    }
+
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
+            ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
+        ]
+    )
+    @Operation(summary = "비밀번호 재설정", description = "", security = [])
+    @PostMapping("/reset-password")
+    fun resetPassword(
+        @RequestBody reqDto: UserResetPasswordReqDto
+    ): CommonResDto<Unit> {
+        userService.resetPassword(reqDto)
+        return CommonResDto.success()
     }
 }

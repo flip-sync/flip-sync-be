@@ -47,4 +47,8 @@ class User private constructor(
     fun updateRefreshToken(refreshToken: String) {
         this.refreshToken = refreshToken
     }
+
+    fun updatePassword(password: String) {
+        this.password = password
+    }
 }

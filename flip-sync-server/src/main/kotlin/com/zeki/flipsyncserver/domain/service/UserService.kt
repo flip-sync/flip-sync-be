@@ -7,6 +7,7 @@ import com.zeki.flipsyncdb.entity.User
 import com.zeki.flipsyncdb.repository.EmailVerifyRepository
 import com.zeki.flipsyncdb.repository.UserRepository
 import com.zeki.flipsyncserver.config.security.jwt.JwtTokenProvider
+import com.zeki.flipsyncserver.domain.dto.request.UserResetPasswordReqDto
 import com.zeki.flipsyncserver.domain.dto.request.UserSignupReqDto
 import com.zeki.flipsyncserver.domain.dto.request.UserVerifyEmailReqDto
 import com.zeki.flipsyncserver.domain.dto.response.TokenResDto
@@ -67,7 +68,14 @@ class UserService(
         return jwtTokenProvider.createToken(user)
     }
 
+    @Transactional(readOnly = true)
     fun loginRefresh(refreshToken: String): TokenResDto {
         return jwtTokenProvider.regenerateAccessToken(refreshToken) ?: throw ApiException(ResponseCode.UNAUTHORIZED)
+    }
+
+    @Transactional(readOnly = true)
+    fun resetPassword(reqDto: UserResetPasswordReqDto) {
+        val user = userRepository.findByUsername(reqDto.email) ?: throw ApiException(ResponseCode.RESOURCE_NOT_FOUND)
+        user.updatePassword(passwordEncoder.encode(reqDto.password))
     }
 }
