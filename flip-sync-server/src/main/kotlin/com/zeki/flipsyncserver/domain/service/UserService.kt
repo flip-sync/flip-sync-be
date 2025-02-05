@@ -29,7 +29,7 @@ class UserService(
 
     @Transactional
     fun signup(reqDto: UserSignupReqDto): Long {
-        val user = getUserEntityService.getUserNullable(reqDto.email)
+        val user = getUserEntityService.getUserByUsernameNullable(reqDto.email)
         if (user != null) throw ApiException(ResponseCode.CONFLICT_DATA)
         val userEntity = User.create(reqDto.email, passwordEncoder.encode(reqDto.password), reqDto.name)
 
@@ -57,6 +57,10 @@ class UserService(
     fun checkVerifyEmail(reqDto: UserVerifyEmailReqDto) {
         val emailVerify = emailVerifyRepository.findByEmail(reqDto.email)
         if (emailVerify == null) throw ApiException(ResponseCode.EMAIL_VERIFY_NOT_FOUND)
+        if (emailVerify.expiredAt.isBefore(LocalDateTime.now())) throw ApiException(ResponseCode.EMAIL_VERIFY_EXPIRED)
+        if (emailVerify.tryCount >= 3) throw ApiException(ResponseCode.EMAIL_VERIFY_TRY_LIMIT)
+        emailVerify.updateTryCount()
+
         if (emailVerify.code != reqDto.code) throw ApiException(ResponseCode.EMAIL_VERIFY_UNAUTHORIZED)
     }
 

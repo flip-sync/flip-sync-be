@@ -30,9 +30,17 @@ class EmailVerify private constructor(
     var expiredAt: LocalDateTime = expiredAt
         protected set
 
+    @Column(name = "try_count", nullable = false)
+    var tryCount: Int = 0
+        protected set
+
     companion object {
         fun create(email: String, code: String, expiredAt: LocalDateTime): EmailVerify {
             return EmailVerify(email = email, code = code, expiredAt = expiredAt)
         }
+    }
+    
+    fun updateTryCount() {
+        tryCount++
     }
 }

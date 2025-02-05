@@ -10,7 +10,7 @@ class UserDetailsServiceImpl(
     private val getUserEntityService: GetUserEntityService
 ) : UserDetailsService {
     override fun loadUserByUsername(username: String): UserDetails {
-        val user = getUserEntityService.getUser(username)
+        val user = getUserEntityService.getUserByUsername(username)
         return UserDetailsImpl.create(user)
     }
 }

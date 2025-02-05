@@ -11,11 +11,11 @@ class GetUserEntityService(
     private val userRepository: UserRepository
 ) {
 
-    fun getUser(username: String): User {
+    fun getUserByUsername(username: String): User {
         return userRepository.findByUsername(username) ?: throw ApiException(ResponseCode.RESOURCE_NOT_FOUND)
     }
 
-    fun getUserNullable(username: String): User? {
+    fun getUserByUsernameNullable(username: String): User? {
         return userRepository.findByUsername(username)
     }
 

@@ -58,7 +58,7 @@ class UserController(
 
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "401", ref = "#/components/responses/EMAIL_VERIFY_UNAUTHORIZED"),
+            ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED_EMAIL_VERIFY"),
             ApiResponse(responseCode = "404", ref = "#/components/responses/EMAIL_VERIFY_NOT_FOUND"),
         ]
     )
@@ -90,6 +90,7 @@ class UserController(
         return CommonResDto.success(data)
     }
 
+
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "401", ref = "#/components/responses/EXPIRED_TOKEN"),
@@ -104,6 +105,7 @@ class UserController(
         val data = userService.loginRefresh(reqDto.refreshToken)
         return CommonResDto.success(data)
     }
+
 
     @ApiResponses(
         value = [

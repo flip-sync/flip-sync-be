@@ -26,6 +26,8 @@ enum class ResponseCode(
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "401_3", "만료된 토큰입니다."),
     UNSUPPORTED_TOKEN(HttpStatus.UNAUTHORIZED, "401_4", "지원되지 않는 토큰입니다."),
     ACCESS_DENIED(HttpStatus.UNAUTHORIZED, "401_5", "접근 권한이 없습니다."),
+    EMAIL_VERIFY_EXPIRED(HttpStatus.UNAUTHORIZED, "401_6", "인증 코드가 만료되었습니다."),
+    EMAIL_VERIFY_TRY_LIMIT(HttpStatus.UNAUTHORIZED, "401_7", "인증 코드 시도 횟수를 초과하였습니다."),
 
     /* 403 */
     FORBIDDEN(HttpStatus.FORBIDDEN, "403_0", "접근 권한이 없습니다."),
