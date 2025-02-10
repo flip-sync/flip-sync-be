@@ -4,22 +4,26 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import ch.qos.logback.core.LayoutBase
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.zeki.flipsyncserver.config.log.GoogleChatWebhookDto
+import com.zeki.common.util.IPUtils
 import io.netty.util.internal.logging.MessageFormatter
 import java.io.IOException
 import java.io.OutputStream
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 
-class GoogleChatAppender() : AppenderBase<ILoggingEvent>() {
-    private val webhookUri: String? = null
+class WebhookAppender() : AppenderBase<ILoggingEvent>() {
+    private var webhookUri: String? = null
     private val layout: LayoutBase<ILoggingEvent?> = defaultLayout
     private val timeout: Int = 30000
+
+    fun setWebhookUri(webhookUri: String) {
+        this.webhookUri = webhookUri
+    }
 
     override fun append(evt: ILoggingEvent) {
         try {
             if (!webhookUri.isNullOrBlank()) {
-                sendMessageWithWebhookUri(webhookUri, evt)
+                sendMessageWithWebhookUri(webhookUri!!, evt)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -31,7 +35,18 @@ class GoogleChatAppender() : AppenderBase<ILoggingEvent>() {
     private fun sendMessageWithWebhookUri(webhookUri: String, evt: ILoggingEvent) {
         val text: String = layout.doLayout(evt)
 
-        val webhookDto: GoogleChatWebhookDto = GoogleChatWebhookDto(text)
+        val webhookDto: DiscordWebhookDto = DiscordWebhookDto(
+            listOf(
+                DiscordWebhookDto.Embeds(
+                    listOf(
+                        DiscordWebhookDto.Fields(
+                            name = IPUtils.getPublicIP() + " - " + IPUtils.getHostName(),
+                            value = text
+                        )
+                    )
+                )
+            )
+        )
         val bytes: ByteArray = ObjectMapper().writeValueAsBytes(webhookDto)
 
         postMessage(webhookUri, "application/json", bytes)
@@ -39,7 +54,7 @@ class GoogleChatAppender() : AppenderBase<ILoggingEvent>() {
 
     @Throws(IOException::class)
     private fun postMessage(uri: String, contentType: String, bytes: ByteArray) {
-        val conn: HttpURLConnection = URL(uri).openConnection() as HttpURLConnection
+        val conn: HttpURLConnection = URI(uri).toURL().openConnection() as HttpURLConnection
         conn.connectTimeout = timeout
         conn.readTimeout = timeout
         conn.doOutput = true
@@ -58,7 +73,7 @@ class GoogleChatAppender() : AppenderBase<ILoggingEvent>() {
             get() = object : LayoutBase<ILoggingEvent?>() {
 
                 override fun doLayout(event: ILoggingEvent?): String {
-                    return ("-- [" + event?.level + "]" +
+                    return ("[" + event?.level + "]" +
                             event?.loggerName + " - " +
                             MessageFormatter.arrayFormat(event?.formattedMessage, event?.argumentArray).message
                                 .replace("\n", "\n\t"))
