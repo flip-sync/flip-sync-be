@@ -16,10 +16,15 @@ class Group(
 ) : BaseEntity() {
     @Column(name = "name", length = 30)
     var name: String = name
+        protected set
 
     @JoinColumn(name = "creator_id")
     @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.PERSIST, CascadeType.MERGE])
     var creator: User = creator
+        protected set
+
+    @OneToMany(mappedBy = "group", fetch = FetchType.LAZY, cascade = [CascadeType.PERSIST, CascadeType.MERGE])
+    var groupUserList: MutableList<GroupUser> = mutableListOf()
 
     companion object {
         fun create(name: String, creator: User): Group {

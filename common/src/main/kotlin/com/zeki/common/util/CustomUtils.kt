@@ -2,6 +2,7 @@ package com.zeki.common.util
 
 import org.springframework.core.env.Environment
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -26,5 +27,8 @@ object CustomUtils {
 
     fun String.toLocalDate(format: String = "yyyyMMdd"): LocalDate =
         LocalDate.parse(this, DateTimeFormatter.ofPattern(format))
+
+    fun LocalDateTime.toStringDateTime(format: String = "yyyy-MM-dd HH:mm:ss"): String =
+        this.format(DateTimeFormatter.ofPattern(format))
 }
 
