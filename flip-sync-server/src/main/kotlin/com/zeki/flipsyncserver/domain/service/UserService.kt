@@ -77,7 +77,7 @@ class UserService(
         return jwtTokenProvider.regenerateAccessToken(refreshToken) ?: throw ApiException(ResponseCode.UNAUTHORIZED)
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     fun resetPassword(reqDto: UserResetPasswordReqDto) {
         val user = userRepository.findByUsername(reqDto.email) ?: throw ApiException(ResponseCode.RESOURCE_NOT_FOUND)
         user.updatePassword(passwordEncoder.encode(reqDto.password))
