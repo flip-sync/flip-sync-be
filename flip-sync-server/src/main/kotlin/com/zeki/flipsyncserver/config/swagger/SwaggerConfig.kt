@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import io.swagger.v3.oas.models.servers.Server
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -37,6 +38,12 @@ class SwaggerConfig {
 
         return OpenAPI()
             .info(info)
+            .servers(
+                listOf(
+                    Server().url("https://devapi.flip-sync.com"),
+                    Server().url("http://localhost:8080")
+                )
+            )
             .components(
                 Components()
                     .addSecuritySchemes(
