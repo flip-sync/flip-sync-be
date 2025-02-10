@@ -1,8 +1,8 @@
 name: flip-sync-server CI
 
 on:
-#  pull_request:
-#    branches: [ "main" ]
+  #  pull_request:
+  #    branches: [ "main" ]
   push:
     branches: [ "main" ]
 
@@ -26,6 +26,7 @@ jobs:
         run: |
           git clone https://x-access-token:${{ secrets.SECRET_TOKEN }}@github.com/flip-sync/flip-sync-be-yml.git
           cd flip-sync-be-yml
+          sudo mkdir -p ../flip-sync-server/src/main/resources
           sudo cp * ../flip-sync-server/src/main/resources/
 
       - name: Set up JDK 17
