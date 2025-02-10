@@ -27,6 +27,7 @@ class WebSecurityConfig(
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
         configuration.allowedOrigins = listOf(
+            "https://devapi.flip-sync.com",
             "https://cdiptangshu.github.io",
             "http://localhost:3000",
             "https://www.flip-sync.com",
