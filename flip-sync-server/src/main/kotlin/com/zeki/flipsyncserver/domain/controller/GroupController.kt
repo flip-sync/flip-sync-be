@@ -10,11 +10,14 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/group")
+@Tag(name = "02. Group", description = "Group API")
 class GroupController(
     private val groupService: GroupService
 ) {
@@ -26,11 +29,15 @@ class GroupController(
             ApiResponse(responseCode = "409", ref = "#/components/responses/CONFLICT_DATA"),
         ]
     )
-    @Operation(summary = "그룹 생성", description = "", security = [SecurityRequirement(name = "Authorization")])
+    @Operation(
+        summary = "그룹 생성",
+        description = "",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
     @PostMapping("")
     fun createGroup(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
-        @RequestBody reqDto: GroupCreateReqDto
+        @Valid @RequestBody reqDto: GroupCreateReqDto
     ): CommonResDto<Long> {
         val data = groupService.createGroup(userDetail, reqDto)
         return CommonResDto.success(data)
@@ -42,7 +49,11 @@ class GroupController(
             ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
         ]
     )
-    @Operation(summary = "내가 속한 그룹 전체 조회", description = "", security = [SecurityRequirement(name = "Authorization")])
+    @Operation(
+        summary = "내가 속한 그룹 전체 조회",
+        description = "",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
     @GetMapping("/my")
     public fun getMyGroupList(
         @AuthenticationPrincipal userDetail: UserDetailsImpl
@@ -57,7 +68,11 @@ class GroupController(
             ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
         ]
     )
-    @Operation(summary = "참여 가능한 그룹 전체 조회", description = "", security = [SecurityRequirement(name = "Authorization")])
+    @Operation(
+        summary = "참여 가능한 그룹 전체 조회",
+        description = "",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
     @GetMapping("")
     public fun getGroupList(
         @AuthenticationPrincipal userDetail: UserDetailsImpl
@@ -73,7 +88,11 @@ class GroupController(
             ApiResponse(responseCode = "409", ref = "#/components/responses/CONFLICT_DATA"),
         ]
     )
-    @Operation(summary = "그룹 참여", description = "", security = [SecurityRequirement(name = "Authorization")])
+    @Operation(
+        summary = "그룹 참여",
+        description = "",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
     @PostMapping("/join")
     public fun joinGroup(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
@@ -86,7 +105,10 @@ class GroupController(
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
-            ApiResponse(responseCode = "403", ref = "#/components/responses/UNMODIFIABLE_INFORMATION"),
+            ApiResponse(
+                responseCode = "403",
+                ref = "#/components/responses/UNMODIFIABLE_INFORMATION"
+            ),
             ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
         ]
     )
@@ -110,11 +132,18 @@ class GroupController(
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
-            ApiResponse(responseCode = "403", ref = "#/components/responses/UNMODIFIABLE_INFORMATION"),
+            ApiResponse(
+                responseCode = "403",
+                ref = "#/components/responses/UNMODIFIABLE_INFORMATION"
+            ),
             ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
         ]
     )
-    @Operation(summary = "그룹 참여자 전체 조회", description = "", security = [SecurityRequirement(name = "Authorization")])
+    @Operation(
+        summary = "그룹 참여자 전체 조회",
+        description = "",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
     @GetMapping("/users")
     public fun getGroupUsersList(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,

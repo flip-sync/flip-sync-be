@@ -84,7 +84,9 @@ class GroupService(
         groupUsersList.get(0).let {
             val gUsersList = groupUserRepository.findByGroup_Id(groupId)
             // 생성자 이면서 남은 인원이 1명이 아니라면 그룹을 떠날 수 없음.
-            if (group.creator.id == userEntity.id && gUsersList.size > 1) throw ApiException(ResponseCode.UNMODIFIABLE_INFORMATION)
+            if (group.creator.id == userEntity.id && gUsersList.size > 1) throw ApiException(
+                ResponseCode.UNMODIFIABLE_INFORMATION
+            )
             // 참여자 삭제
             groupUserRepository.delete(it)
             // 생성자라면 그룹 삭제
@@ -93,7 +95,10 @@ class GroupService(
     }
 
     @Transactional(readOnly = true)
-    fun getGroupUsersList(userDetail: UserDetailsImpl, groupId: Long): List<GroupUsersGetListResDto> {
+    fun getGroupUsersList(
+        userDetail: UserDetailsImpl,
+        groupId: Long
+    ): List<GroupUsersGetListResDto> {
         getUserEntityService.getUserByUsername(userDetail.username)
         val group = groupRepository.findById(groupId)
             .orElseThrow { ApiException(ResponseCode.RESOURCE_NOT_FOUND) }
@@ -105,6 +110,12 @@ class GroupService(
                 joinedAt = it.createdAt.toStringDateTime()
             )
         }.toList()
+    }
+
+    fun getGroupEntity(groupId: Long): Group {
+        return groupRepository.findById(groupId).orElseThrow {
+            ApiException(ResponseCode.RESOURCE_NOT_FOUND)
+        }
     }
 
 }

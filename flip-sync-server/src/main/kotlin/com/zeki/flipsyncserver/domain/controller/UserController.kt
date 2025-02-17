@@ -21,8 +21,14 @@ class UserController(
 
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "401", ref = "#/components/responses/EMAIL_VERIFY_UNAUTHORIZED"),
-            ApiResponse(responseCode = "404", ref = "#/components/responses/EMAIL_VERIFY_NOT_FOUND"),
+            ApiResponse(
+                responseCode = "401",
+                ref = "#/components/responses/EMAIL_VERIFY_UNAUTHORIZED"
+            ),
+            ApiResponse(
+                responseCode = "404",
+                ref = "#/components/responses/EMAIL_VERIFY_NOT_FOUND"
+            ),
             ApiResponse(responseCode = "409", ref = "#/components/responses/CONFLICT_DATA"),
         ]
     )
@@ -40,8 +46,14 @@ class UserController(
 
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "401", ref = "#/components/responses/EMAIL_VERIFY_UNAUTHORIZED"),
-            ApiResponse(responseCode = "404", ref = "#/components/responses/EMAIL_VERIFY_NOT_FOUND"),
+            ApiResponse(
+                responseCode = "401",
+                ref = "#/components/responses/EMAIL_VERIFY_UNAUTHORIZED"
+            ),
+            ApiResponse(
+                responseCode = "404",
+                ref = "#/components/responses/EMAIL_VERIFY_NOT_FOUND"
+            ),
         ]
     )
     @Operation(summary = "이메일 인증 요청", description = "", security = [])
@@ -58,14 +70,20 @@ class UserController(
 
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED_EMAIL_VERIFY"),
-            ApiResponse(responseCode = "404", ref = "#/components/responses/EMAIL_VERIFY_NOT_FOUND"),
+            ApiResponse(
+                responseCode = "401",
+                ref = "#/components/responses/UNAUTHORIZED_EMAIL_VERIFY"
+            ),
+            ApiResponse(
+                responseCode = "404",
+                ref = "#/components/responses/EMAIL_VERIFY_NOT_FOUND"
+            ),
         ]
     )
     @Operation(summary = "이메일 인증 확인", description = "", security = [])
     @PostMapping("/verify-email/check")
     fun verifyEmailCheck(
-        @RequestBody reqDto: UserVerifyEmailReqDto
+        @Valid @RequestBody reqDto: UserVerifyEmailReqDto
     ): CommonResDto<Unit> {
 
         userService.checkVerifyEmail(reqDto)
@@ -84,7 +102,7 @@ class UserController(
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
     fun login(
-        @RequestBody reqDto: UserLoginReqDto
+        @Valid @RequestBody reqDto: UserLoginReqDto
     ): CommonResDto<TokenResDto> {
         val data = userService.login(reqDto.email, reqDto.password)
         return CommonResDto.success(data)
@@ -116,7 +134,7 @@ class UserController(
     @Operation(summary = "비밀번호 재설정", description = "", security = [])
     @PostMapping("/reset-password")
     fun resetPassword(
-        @RequestBody reqDto: UserResetPasswordReqDto
+        @Valid @RequestBody reqDto: UserResetPasswordReqDto
     ): CommonResDto<Unit> {
         userService.resetPassword(reqDto)
         return CommonResDto.success()
