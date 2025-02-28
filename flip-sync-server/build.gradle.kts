@@ -29,4 +29,8 @@ dependencies {
     api("io.jsonwebtoken:jjwt-api:0.11.2")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.2")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.2")
+
+    //S3
+    implementation("org.springframework.cloud:spring-cloud-starter-aws:2.2.5.RELEASE")
+    implementation("org.apache.tika:tika-core:3.1.0")
 }

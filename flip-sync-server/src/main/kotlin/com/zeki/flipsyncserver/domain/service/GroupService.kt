@@ -11,6 +11,8 @@ import com.zeki.flipsyncserver.config.security.UserDetailsImpl
 import com.zeki.flipsyncserver.domain.dto.request.GroupCreateReqDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupGetListResDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupUsersGetListResDto
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -31,33 +33,33 @@ class GroupService(
     }
 
     @Transactional(readOnly = true)
-    fun getMyGroupList(userDetail: UserDetailsImpl): List<GroupGetListResDto> {
+    fun getMyGroupList(userDetail: UserDetailsImpl, pageable: Pageable): Page<GroupGetListResDto> {
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
-        val groupUsersList = groupUserRepository.findByUsers(userEntity)
+        val groupUsersPage = groupUserRepository.findByUsers(userEntity, pageable)
 
-        return groupUsersList.stream().map {
-            GroupGetListResDto(
-                it.group.id!!,
-                it.group.name,
-                it.group.creator.id!!,
-                it.group.creator.name
-            )
-        }.toList()
-    }
-
-    @Transactional(readOnly = true)
-    fun getGroupList(userDetail: UserDetailsImpl): List<GroupGetListResDto> {
-        getUserEntityService.getUserByUsername(userDetail.username)
-        val allGroupList = groupRepository.findAll()
-
-        return allGroupList.stream().map {
+        return groupUsersPage.map { it.group }.map {
             GroupGetListResDto(
                 it.id!!,
                 it.name,
                 it.creator.id!!,
                 it.creator.name
             )
-        }.toList()
+        }
+    }
+
+    @Transactional(readOnly = true)
+    fun getGroupList(userDetail: UserDetailsImpl, pageable: Pageable): Page<GroupGetListResDto> {
+        getUserEntityService.getUserByUsername(userDetail.username)
+        val allGroupPage = groupRepository.findAll(pageable)
+
+        return allGroupPage.map {
+            GroupGetListResDto(
+                it.id!!,
+                it.name,
+                it.creator.id!!,
+                it.creator.name
+            )
+        }
     }
 
     @Transactional

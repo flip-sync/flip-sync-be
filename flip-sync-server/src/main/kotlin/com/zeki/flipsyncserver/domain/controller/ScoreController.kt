@@ -38,7 +38,6 @@ class ScoreController(
         @PathVariable groupId: Long,
         @RequestBody @Valid reqDto: SocreCreateReqDto
     ): CommonResDto<Long> {
-
         val data = scoreService.createScore(userDetail, groupId, reqDto)
 
         return CommonResDto.success(data)

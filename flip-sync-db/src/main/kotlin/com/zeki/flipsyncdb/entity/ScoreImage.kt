@@ -4,8 +4,8 @@ import com.zeki.common.entity.BaseEntity
 import jakarta.persistence.*
 
 @Entity
-@Table(name = "socre_image", schema = "flip_sync")
-class SocreImage private constructor(
+@Table(name = "score_image", schema = "flip_sync")
+class ScoreImage private constructor(
     score: Score,
     order: Int,
     url: String
@@ -23,8 +23,8 @@ class SocreImage private constructor(
         protected set
 
     companion object {
-        fun create(score: Score, order: Int, url: String): SocreImage {
-            return SocreImage(score, order, url)
+        fun create(score: Score, order: Int, url: String): ScoreImage {
+            return ScoreImage(score, order, url)
         }
     }
 }

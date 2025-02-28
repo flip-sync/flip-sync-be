@@ -1,6 +1,7 @@
 package com.zeki.flipsyncserver.domain.service
 
 import com.zeki.flipsyncdb.entity.Score
+import com.zeki.flipsyncdb.entity.ScoreImage
 import com.zeki.flipsyncdb.repository.ScoreRepository
 import com.zeki.flipsyncserver.config.security.UserDetailsImpl
 import com.zeki.flipsyncserver.domain.dto.request.SocreCreateReqDto
@@ -11,7 +12,8 @@ import org.springframework.transaction.annotation.Transactional
 class ScoreService(
     private val scoreRepository: ScoreRepository,
     private val getUserEntityService: GetUserEntityService,
-    private val groupService: GroupService
+    private val groupService: GroupService,
+    private val s3Service: S3Service
 ) {
 
     @Transactional
@@ -27,7 +29,14 @@ class ScoreService(
             uploadedUserId = userEntity.id!!
         )
 
-        // TODO image 처리
+        // 악보 이미지 생성
+        reqDto.imageList.map {
+            ScoreImage.create(
+                score = score,
+                order = it.order,
+                url = s3Service.createUrl(it.file, "score"),
+            )
+        }.toList()
 
         scoreRepository.save(score)
         return score.id!!

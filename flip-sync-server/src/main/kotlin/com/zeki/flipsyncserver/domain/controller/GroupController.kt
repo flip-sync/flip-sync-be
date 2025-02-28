@@ -12,6 +12,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
@@ -56,9 +60,10 @@ class GroupController(
     )
     @GetMapping("/my")
     public fun getMyGroupList(
-        @AuthenticationPrincipal userDetail: UserDetailsImpl
-    ): CommonResDto<List<GroupGetListResDto>> {
-        val data = groupService.getMyGroupList(userDetail)
+        @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @ParameterObject @PageableDefault pageable: Pageable
+    ): CommonResDto<Page<GroupGetListResDto>> {
+        val data = groupService.getMyGroupList(userDetail, pageable)
         return CommonResDto.success(data)
     }
 
@@ -75,9 +80,10 @@ class GroupController(
     )
     @GetMapping("")
     public fun getGroupList(
-        @AuthenticationPrincipal userDetail: UserDetailsImpl
-    ): CommonResDto<List<GroupGetListResDto>> {
-        val data = groupService.getGroupList(userDetail)
+        @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @ParameterObject @PageableDefault pageable: Pageable
+    ): CommonResDto<Page<GroupGetListResDto>> {
+        val data = groupService.getGroupList(userDetail, pageable)
         return CommonResDto.success(data)
     }
 
