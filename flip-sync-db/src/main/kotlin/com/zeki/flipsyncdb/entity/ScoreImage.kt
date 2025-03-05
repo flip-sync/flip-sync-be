@@ -24,7 +24,9 @@ class ScoreImage private constructor(
 
     companion object {
         fun create(score: Score, order: Int, url: String): ScoreImage {
-            return ScoreImage(score, order, url)
+            return ScoreImage(score, order, url).apply {
+                score.addScoreImage(this)
+            }
         }
     }
 }

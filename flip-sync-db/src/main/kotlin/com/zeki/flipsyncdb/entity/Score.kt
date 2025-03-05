@@ -32,6 +32,14 @@ class Score private constructor(
     var uploadedUserId: Long = uploadedUserId
         protected set
 
+    @OneToMany(
+        mappedBy = "score",
+        fetch = FetchType.LAZY,
+        cascade = [CascadeType.PERSIST, CascadeType.MERGE]
+    )
+    var scoreImageList: MutableList<ScoreImage> = mutableListOf()
+        protected set
+
     companion object {
         fun create(
             group: Group,
@@ -42,5 +50,10 @@ class Score private constructor(
         ): Score {
             return Score(group, title, code, singer, uploadedUserId)
         }
+    }
+
+    fun addScoreImage(scoreImage: ScoreImage) {
+        scoreImageList.add(scoreImage)
+        scoreImage.score = this
     }
 }
