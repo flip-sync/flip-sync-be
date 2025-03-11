@@ -69,7 +69,7 @@ class ScoreController(
     fun getPageScore(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
         @PathVariable groupId: Long,
-        @ModelAttribute @Valid reqDto: ScoreGetPageReqDto,
+        @ParameterObject @ModelAttribute @Valid reqDto: ScoreGetPageReqDto,
         @ParameterObject @PageableDefault pageable: Pageable
     ): CommonResDto<Page<ScoreGetPageResDto>> {
         val data = scoreService.getPageScore(userDetail, groupId, reqDto, pageable)
