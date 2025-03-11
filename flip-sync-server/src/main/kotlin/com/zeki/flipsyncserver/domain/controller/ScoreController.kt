@@ -17,6 +17,7 @@ import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
+import org.springframework.http.MediaType
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
@@ -39,11 +40,11 @@ class ScoreController(
         description = "",
         security = [SecurityRequirement(name = "Authorization")]
     )
-    @PostMapping("")
+    @PostMapping("", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun createScore(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
         @PathVariable groupId: Long,
-        @RequestBody @Valid reqDto: SocreCreateReqDto
+        @ModelAttribute @Valid reqDto: SocreCreateReqDto
     ): CommonResDto<Long> {
         val data = scoreService.createScore(userDetail, groupId, reqDto)
 
@@ -68,7 +69,7 @@ class ScoreController(
     fun getPageScore(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
         @PathVariable groupId: Long,
-        @RequestBody @Valid reqDto: ScoreGetPageReqDto,
+        @ModelAttribute @Valid reqDto: ScoreGetPageReqDto,
         @ParameterObject @PageableDefault pageable: Pageable
     ): CommonResDto<Page<ScoreGetPageResDto>> {
         val data = scoreService.getPageScore(userDetail, groupId, reqDto, pageable)

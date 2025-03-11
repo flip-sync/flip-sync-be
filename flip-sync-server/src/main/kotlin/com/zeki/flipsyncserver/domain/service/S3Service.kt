@@ -54,7 +54,6 @@ class S3Service(
                 // 업로드
                 amazonS3Client.putObject(
                     PutObjectRequest(bucket, fileName, inputStream, objectMetadata)
-                        .withCannedAcl(CannedAccessControlList.PublicRead)
                 )
                 return fileName
             }
