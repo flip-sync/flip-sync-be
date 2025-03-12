@@ -30,7 +30,7 @@ class S3Service(
     }
 
     fun createUrl(file: MultipartFile, path: String): String {
-        return putFile(file, path)
+        return objectLink + putFile(file, path)
     }
 
     private fun putFile(multipartFile: MultipartFile, path: String): String {

@@ -1,11 +1,12 @@
 package com.zeki.flipsyncserver.domain.service.join
 
 import com.querydsl.core.BooleanBuilder
+import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
 import com.zeki.flipsyncdb.dto.QScoreGetPageResDto
 import com.zeki.flipsyncdb.dto.ScoreGetPageResDto
 import com.zeki.flipsyncdb.entity.QScore.score
-import com.zeki.flipsyncdb.entity.QScoreImage.scoreImage
+import com.zeki.flipsyncdb.entity.QScoreImage
 import com.zeki.flipsyncdb.entity.QUser.user
 import com.zeki.flipsyncserver.domain.dto.request.ScoreGetPageReqDto
 import org.springframework.data.domain.Page
@@ -42,10 +43,22 @@ class ScoreJoinRepository(
 
         builder.and(score.group.id.eq(groupId))
 
+
+        val subScoreImage = QScoreImage("subScoreImage") // 서브쿼리에서 사용할 별칭
+
+// 서브쿼리: score_id가 같은 row 중 order가 가장 작은 url만 추출
+        val firstImageUrl = JPAExpressions
+            .select(subScoreImage.url)
+            .from(subScoreImage)
+            .where(subScoreImage.score.eq(score))
+            .orderBy(subScoreImage.order.asc())
+            .limit(1)
+
+
         val mainQuery = jpaQueryFactory.select(
             QScoreGetPageResDto(
                 score.id,
-                scoreImage.url,
+                firstImageUrl,
                 score.title,
                 score.singer,
                 score.code,
@@ -55,10 +68,8 @@ class ScoreJoinRepository(
             )
         )
             .from(score)
-            .leftJoin(score.scoreImageList, scoreImage)
             .leftJoin(user).on(score.uploadedUserId.eq(user.id))
             .where(builder)
-            .groupBy(score.id)
 
         // Pageable의 sort 정보를 이용한 정렬 로직
         pageable.sort.forEach { order ->
