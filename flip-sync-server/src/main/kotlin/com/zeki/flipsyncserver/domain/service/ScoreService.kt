@@ -62,7 +62,7 @@ class ScoreService(
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
         val groupEntity = groupService.getGroupEntity(groupId)
 
-        if (groupEntity.groupUserList.map { it.users.id }.contains(userEntity.id)) {
+        if (!groupEntity.groupUserList.map { it.users.id }.contains(userEntity.id)) {
             throw ApiException(ResponseCode.FORBIDDEN, "그룹에 속하지 않은 사용자입니다.")
         }
 
@@ -79,13 +79,13 @@ class ScoreService(
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
         val groupEntity = groupService.getGroupEntity(groupId)
 
-        if (groupEntity.groupUserList.map { it.users.id }.contains(userEntity.id)) {
+        if (!groupEntity.groupUserList.map { it.users.id }.contains(userEntity.id)) {
             throw ApiException(ResponseCode.FORBIDDEN, "그룹에 속하지 않은 사용자입니다.")
         }
 
         val scoreEntity = scoreRepository.findById(scoreId)
             .orElseThrow { ApiException(ResponseCode.RESOURCE_NOT_FOUND) }
-        
+
         val uploadedUser = getUserEntityService.getUserById(scoreEntity.uploadedUserId)
         return ScoreGetDetailResDto(
             id = scoreEntity.id!!,
