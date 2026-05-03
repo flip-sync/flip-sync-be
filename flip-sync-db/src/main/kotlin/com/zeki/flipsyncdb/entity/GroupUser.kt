@@ -4,7 +4,17 @@ import com.zeki.common.entity.BaseEntity
 import jakarta.persistence.*
 
 @Entity
-@Table(name = "group_users", schema = "flip_sync")
+@Table(
+    name = "group_users",
+    schema = "flip_sync",
+    indexes = [
+        Index(name = "group_users_group_id_index", columnList = "group_id"),
+        Index(name = "group_users_users_id_index", columnList = "users_id")
+    ],
+    uniqueConstraints = [
+        UniqueConstraint(name = "uk_group_users_group_user", columnNames = ["group_id", "users_id"])
+    ]
+)
 class GroupUser private constructor(
     group: Group,
     user: User

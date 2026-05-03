@@ -49,6 +49,7 @@ class WebSecurityConfig(
 
             "/",
             "/error",
+            "/local-upload/**",
 
             "/user/**",
 //            "/test/**",

@@ -6,7 +6,13 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "email_verify", schema = "flip_sync")
+@Table(
+    name = "email_verify",
+    schema = "flip_sync",
+    uniqueConstraints = [
+        UniqueConstraint(name = "uk_email_verify_email", columnNames = ["email"])
+    ]
+)
 class EmailVerify private constructor(
     status: Status = Status.N,
     email: String,
@@ -18,7 +24,7 @@ class EmailVerify private constructor(
     var status: Status = status
         protected set
 
-    @Column(name = "email", nullable = false, length = 50)
+    @Column(name = "email", nullable = false, length = 255)
     var email: String = email
         protected set
 
@@ -42,5 +48,20 @@ class EmailVerify private constructor(
     
     fun updateTryCount() {
         tryCount++
+    }
+
+    fun reissue(code: String, expiredAt: LocalDateTime) {
+        this.status = Status.N
+        this.code = code
+        this.expiredAt = expiredAt
+        this.tryCount = 0
+    }
+
+    fun markVerified() {
+        status = Status.Y
+    }
+
+    fun isVerified(): Boolean {
+        return status == Status.Y
     }
 }

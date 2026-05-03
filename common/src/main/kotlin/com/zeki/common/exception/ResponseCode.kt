@@ -29,6 +29,8 @@ enum class ResponseCode(
     EMAIL_VERIFY_EXPIRED(HttpStatus.UNAUTHORIZED, "401_6", "인증 코드가 만료되었습니다."),
     EMAIL_VERIFY_TRY_LIMIT(HttpStatus.UNAUTHORIZED, "401_7", "인증 코드 시도 횟수를 초과하였습니다."),
 
+    EMAIL_VERIFY_REQUIRED(HttpStatus.UNAUTHORIZED, "401_8", "이메일 인증이 필요합니다."),
+
     /* 403 */
     FORBIDDEN(HttpStatus.FORBIDDEN, "403_0", "접근 권한이 없습니다."),
     UNMODIFIABLE_INFORMATION(HttpStatus.FORBIDDEN, "403_1", "변경할 수 없는 정보입니다."),

@@ -43,3 +43,8 @@ out/
 /**/src/main/resources/**.xml
 
 logs/
+.backend*.log
+.env
+.env.*
+!.env.server.example
+docker.local.env

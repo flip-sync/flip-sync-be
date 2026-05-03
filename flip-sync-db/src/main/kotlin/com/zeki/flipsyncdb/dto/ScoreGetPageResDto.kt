@@ -1,42 +1,50 @@
-package com.zeki.flipsyncdb.dto
+﻿package com.zeki.flipsyncdb.dto
 
 import com.querydsl.core.annotations.QueryProjection
 import com.zeki.common.util.CustomUtils.toStringDateTime
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
-@Schema(description = "Score Get Page Response DTO")
+@Schema(description = "Score page response")
 class ScoreGetPageResDto @QueryProjection constructor(
     id: Long,
+    uploadedUserId: Long,
     thumbnail: String,
     title: String,
     singer: String,
     code: String,
     uploadedUserName: String,
+    uploadedUserProfileImageUrl: String?,
     createdAt: LocalDateTime,
     modifiedAt: LocalDateTime,
 ) {
-    @Schema(description = "악보 ID", example = "1")
+    @Schema(description = "Score id", example = "1")
     val id: Long = id
 
-    @Schema(description = "대표 악보 이미지 URL", example = "https://example.com/score.jpg")
+    @Schema(description = "Uploader user id", example = "12")
+    val uploadedUserId: Long = uploadedUserId
+
+    @Schema(description = "Thumbnail url", example = "https://example.com/score.jpg")
     val thumbnail: String = thumbnail
 
-    @Schema(description = "악보 제목", example = "사랑은 늘 도망가")
+    @Schema(description = "Score title", example = "Moon River")
     val title: String = title
 
-    @Schema(description = "가수", example = "김수희")
+    @Schema(description = "Singer", example = "Audrey Hepburn")
     val singer: String = singer
 
-    @Schema(description = "코드", example = "C 코드")
+    @Schema(description = "Code", example = "C")
     val code: String = code
 
-    @Schema(description = "업로드한 유저 이름", example = "장경태")
+    @Schema(description = "Uploader name", example = "Alice")
     val uploadedUserName: String = uploadedUserName
 
-    @Schema(description = "생성일자", example = "2023-10-01 12:00:00")
+    @Schema(description = "Uploader profile image url", example = "https://example.com/profile.png")
+    val uploadedUserProfileImageUrl: String? = uploadedUserProfileImageUrl
+
+    @Schema(description = "Created at", example = "2026-05-02 12:00:00")
     val createdAt: String = createdAt.toStringDateTime()
 
-    @Schema(description = "수정일자", example = "2023-10-01 12:30:00")
+    @Schema(description = "Modified at", example = "2026-05-02 12:30:00")
     val modifiedAt: String = modifiedAt.toStringDateTime()
 }

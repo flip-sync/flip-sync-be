@@ -4,10 +4,17 @@ import com.zeki.common.entity.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 
 
 @Entity
-@Table(name = "users", schema = "flip_sync")
+@Table(
+    name = "users",
+    schema = "flip_sync",
+    uniqueConstraints = [
+        UniqueConstraint(name = "uk_users_username", columnNames = ["username"])
+    ]
+)
 class User private constructor(
     username: String,
     password: String,
@@ -18,7 +25,7 @@ class User private constructor(
         ADMIN, USER
     }
 
-    @Column(name = "username", length = 30)
+    @Column(name = "username", length = 255)
     var username: String = username
         protected set
 
@@ -32,6 +39,14 @@ class User private constructor(
 
     @Column(name = "name", length = 30)
     var name: String = name
+        protected set
+
+    @Column(name = "bio", length = 100)
+    var bio: String? = null
+        protected set
+
+    @Column(name = "profile_image_url", length = 500)
+    var profileImageUrl: String? = null
         protected set
 
     @Column(name = "refresh_token", length = 500)
@@ -50,5 +65,18 @@ class User private constructor(
 
     fun updatePassword(password: String) {
         this.password = password
+    }
+
+    fun updateUsername(username: String) {
+        this.username = username
+    }
+
+    fun updateProfile(name: String, bio: String?) {
+        this.name = name
+        this.bio = bio?.trim()?.ifBlank { null }
+    }
+
+    fun updateProfileImage(profileImageUrl: String?) {
+        this.profileImageUrl = profileImageUrl?.trim()?.ifBlank { null }
     }
 }

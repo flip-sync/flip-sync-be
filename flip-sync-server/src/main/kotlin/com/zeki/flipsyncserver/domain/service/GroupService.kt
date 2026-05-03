@@ -1,4 +1,4 @@
-package com.zeki.flipsyncserver.domain.service
+﻿package com.zeki.flipsyncserver.domain.service
 
 import com.zeki.common.exception.ApiException
 import com.zeki.common.exception.ResponseCode
@@ -9,10 +9,13 @@ import com.zeki.flipsyncdb.repository.GroupRepository
 import com.zeki.flipsyncdb.repository.GroupUserRepository
 import com.zeki.flipsyncserver.config.security.UserDetailsImpl
 import com.zeki.flipsyncserver.domain.dto.request.GroupCreateReqDto
+import com.zeki.flipsyncserver.domain.dto.request.GroupJoinReqDto
+import com.zeki.flipsyncserver.domain.dto.response.GroupGetDetailResDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupGetListResDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupUsersGetListResDto
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -20,12 +23,23 @@ import org.springframework.transaction.annotation.Transactional
 class GroupService(
     private val groupRepository: GroupRepository,
     private val groupUserRepository: GroupUserRepository,
-    private val getUserEntityService: GetUserEntityService
+    private val getUserEntityService: GetUserEntityService,
+    private val organizationAccessService: OrganizationAccessService,
+    private val passwordEncoder: PasswordEncoder
 ) {
     @Transactional
-    fun createGroup(userDetail: UserDetailsImpl, reqDto: GroupCreateReqDto): Long {
+    fun createGroup(userDetail: UserDetailsImpl, organizationId: Long, reqDto: GroupCreateReqDto): Long {
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
-        val group = Group.create(reqDto.name, userEntity)
+        val organization = organizationAccessService.getAccessibleOrganization(userDetail, organizationId)
+        val normalizedPassword = reqDto.password?.trim().orEmpty()
+        val encodedPassword = normalizedPassword.takeIf { it.isNotBlank() }?.let { passwordEncoder.encode(it) }
+        val group = Group.create(
+            name = reqDto.name,
+            creator = userEntity,
+            organization = organization,
+            maxMemberCount = reqDto.maxMemberCount,
+            roomPassword = encodedPassword
+        )
 
         groupRepository.save(group)
         groupUserRepository.save(GroupUser.create(group, userEntity))
@@ -33,91 +47,183 @@ class GroupService(
     }
 
     @Transactional(readOnly = true)
-    fun getMyGroupList(userDetail: UserDetailsImpl, pageable: Pageable): Page<GroupGetListResDto> {
+    fun getMyGroupList(
+        userDetail: UserDetailsImpl,
+        organizationId: Long,
+        pageable: Pageable
+    ): Page<GroupGetListResDto> {
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
-        val groupUsersPage = groupUserRepository.findByUsers(userEntity, pageable)
+        organizationAccessService.getAccessibleOrganization(userDetail, organizationId)
+        val groupUsersPage = groupUserRepository.findByUsersAndGroup_Organization_Id(userEntity, organizationId, pageable)
 
-        return groupUsersPage.map { it.group }.map {
+        return groupUsersPage.map { it.group }.map { group ->
             GroupGetListResDto(
-                it.id!!,
-                it.name,
-                it.creator.id!!,
-                it.creator.name
+                id = group.id!!,
+                organizationId = group.organization.id!!,
+                name = group.name,
+                creatorId = group.creator.id!!,
+                creatorName = group.creator.name,
+                currentMemberCount = group.groupUserList.size,
+                maxMemberCount = group.maxMemberCount,
+                hasPassword = group.hasPassword()
             )
         }
     }
 
     @Transactional(readOnly = true)
-    fun getGroupList(userDetail: UserDetailsImpl, pageable: Pageable): Page<GroupGetListResDto> {
-        getUserEntityService.getUserByUsername(userDetail.username)
-        val allGroupPage = groupRepository.findAll(pageable)
+    fun getGroupList(
+        userDetail: UserDetailsImpl,
+        organizationId: Long,
+        pageable: Pageable
+    ): Page<GroupGetListResDto> {
+        organizationAccessService.getAccessibleOrganization(userDetail, organizationId)
+        val allGroupPage = groupRepository.findAllByOrganization_Id(organizationId, pageable)
 
-        return allGroupPage.map {
+        return allGroupPage.map { group ->
             GroupGetListResDto(
-                it.id!!,
-                it.name,
-                it.creator.id!!,
-                it.creator.name
+                id = group.id!!,
+                organizationId = group.organization.id!!,
+                name = group.name,
+                creatorId = group.creator.id!!,
+                creatorName = group.creator.name,
+                currentMemberCount = group.groupUserList.size,
+                maxMemberCount = group.maxMemberCount,
+                hasPassword = group.hasPassword()
             )
         }
     }
 
     @Transactional
-    fun joinGroup(userDetail: UserDetailsImpl, groupId: Long) {
+    fun joinGroup(userDetail: UserDetailsImpl, organizationId: Long, reqDto: GroupJoinReqDto) {
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
-        val group = groupRepository.findById(groupId)
-            .orElseThrow { ApiException(ResponseCode.RESOURCE_NOT_FOUND) }
+        val group = getGroupEntity(userDetail, organizationId, reqDto.groupId)
 
         val existsByUsersAndGroup = groupUserRepository.existsByUsersAndGroup(userEntity, group)
-        if (existsByUsersAndGroup) throw ApiException(ResponseCode.CONFLICT_DATA)
+        if (existsByUsersAndGroup) {
+            throw ApiException(ResponseCode.CONFLICT_DATA)
+        }
 
-        GroupUser.create(group = group, user = userEntity).let { groupUserRepository.save(it) }
+        if (group.groupUserList.size >= group.maxMemberCount) {
+            throw ApiException(ResponseCode.CONFLICT_DATA, "ROOM_MEMBER_LIMIT_REACHED")
+        }
+
+        if (group.hasPassword()) {
+            val password = reqDto.password?.trim().orEmpty()
+            if (!passwordEncoder.matches(password, group.roomPassword.orEmpty())) {
+                throw ApiException(ResponseCode.FORBIDDEN, "INVALID_ROOM_PASSWORD")
+            }
+        }
+
+        groupUserRepository.save(GroupUser.create(group = group, user = userEntity))
     }
 
     @Transactional
-    fun leaveGroup(userDetail: UserDetailsImpl, groupId: Long) {
+    fun leaveGroup(userDetail: UserDetailsImpl, organizationId: Long, groupId: Long) {
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
-        val group = groupRepository.findById(groupId)
-            .orElseThrow { ApiException(ResponseCode.RESOURCE_NOT_FOUND) }
-
+        val group = getGroupEntity(userDetail, organizationId, groupId)
         val groupUsersList = groupUserRepository.findByGroup_IdAndUsers_Id(groupId, userEntity.id!!)
-        if (groupUsersList.isEmpty()) throw ApiException(ResponseCode.RESOURCE_NOT_FOUND)
 
-        groupUsersList.get(0).let {
-            val gUsersList = groupUserRepository.findByGroup_Id(groupId)
-            // 생성자 이면서 남은 인원이 1명이 아니라면 그룹을 떠날 수 없음.
-            if (group.creator.id == userEntity.id && gUsersList.size > 1) throw ApiException(
-                ResponseCode.UNMODIFIABLE_INFORMATION
-            )
-            // 참여자 삭제
-            groupUserRepository.delete(it)
-            // 생성자라면 그룹 삭제
-            if (gUsersList.size == 1) groupRepository.delete(gUsersList.get(0).group)
+        if (groupUsersList.isEmpty()) {
+            throw ApiException(ResponseCode.RESOURCE_NOT_FOUND)
+        }
+
+        val joinedMember = groupUsersList.first()
+        val groupMembers = groupUserRepository.findByGroup_Id(groupId)
+
+        if (group.creator.id == userEntity.id && groupMembers.size > 1) {
+            throw ApiException(ResponseCode.UNMODIFIABLE_INFORMATION)
+        }
+
+        groupUserRepository.delete(joinedMember)
+        if (groupMembers.size == 1) {
+            groupRepository.delete(group)
         }
     }
 
     @Transactional(readOnly = true)
     fun getGroupUsersList(
         userDetail: UserDetailsImpl,
+        organizationId: Long,
         groupId: Long
     ): List<GroupUsersGetListResDto> {
         getUserEntityService.getUserByUsername(userDetail.username)
-        val group = groupRepository.findById(groupId)
-            .orElseThrow { ApiException(ResponseCode.RESOURCE_NOT_FOUND) }
+        val group = getGroupEntity(userDetail, organizationId, groupId)
 
-        return group.groupUserList.stream().map {
+        return group.groupUserList.map {
             GroupUsersGetListResDto(
                 id = it.users.id!!,
                 name = it.users.name,
+                profileImageUrl = it.users.profileImageUrl,
                 joinedAt = it.createdAt.toStringDateTime()
             )
-        }.toList()
-    }
-
-    fun getGroupEntity(groupId: Long): Group {
-        return groupRepository.findById(groupId).orElseThrow {
-            ApiException(ResponseCode.RESOURCE_NOT_FOUND)
         }
     }
 
+    @Transactional(readOnly = true)
+    fun getGroupDetail(
+        userDetail: UserDetailsImpl,
+        organizationId: Long,
+        groupId: Long
+    ): GroupGetDetailResDto {
+        val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
+        val group = getGroupEntity(userDetail, organizationId, groupId)
+
+        if (!group.groupUserList.map { it.users.id }.contains(userEntity.id)) {
+            throw ApiException(ResponseCode.FORBIDDEN)
+        }
+
+        return GroupGetDetailResDto(
+            id = group.id!!,
+            organizationId = group.organization.id!!,
+            name = group.name,
+            creatorId = group.creator.id!!,
+            creatorName = group.creator.name,
+            currentUserId = userEntity.id!!,
+            currentUserName = userEntity.name,
+            currentUserProfileImageUrl = userEntity.profileImageUrl,
+            currentUserIsCreator = group.creator.id == userEntity.id,
+            currentMemberCount = group.groupUserList.size,
+            maxMemberCount = group.maxMemberCount,
+            hasPassword = group.hasPassword()
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun getGroupDetailForSocket(userDetail: UserDetailsImpl, groupId: Long): GroupGetDetailResDto {
+        val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
+        val group = groupRepository.findById(groupId)
+            .orElseThrow { ApiException(ResponseCode.RESOURCE_NOT_FOUND) }
+
+        if (!group.groupUserList.map { it.users.id }.contains(userEntity.id)) {
+            throw ApiException(ResponseCode.FORBIDDEN)
+        }
+
+        return GroupGetDetailResDto(
+            id = group.id!!,
+            organizationId = group.organization.id!!,
+            name = group.name,
+            creatorId = group.creator.id!!,
+            creatorName = group.creator.name,
+            currentUserId = userEntity.id!!,
+            currentUserName = userEntity.name,
+            currentUserProfileImageUrl = userEntity.profileImageUrl,
+            currentUserIsCreator = group.creator.id == userEntity.id,
+            currentMemberCount = group.groupUserList.size,
+            maxMemberCount = group.maxMemberCount,
+            hasPassword = group.hasPassword()
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun getGroupEntity(userDetail: UserDetailsImpl, organizationId: Long, groupId: Long): Group {
+        organizationAccessService.getAccessibleOrganization(userDetail, organizationId)
+        val group = groupRepository.findById(groupId)
+            .orElseThrow { ApiException(ResponseCode.RESOURCE_NOT_FOUND) }
+
+        if (group.organization.id != organizationId) {
+            throw ApiException(ResponseCode.FORBIDDEN, "선택된 조직의 방이 아닙니다.")
+        }
+
+        return group
+    }
 }

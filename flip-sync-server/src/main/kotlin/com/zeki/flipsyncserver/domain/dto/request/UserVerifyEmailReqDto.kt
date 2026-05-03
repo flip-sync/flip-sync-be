@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Size
 @Schema(name = "User Verify Email Request Dto")
 data class UserVerifyEmailReqDto(
     @Schema(description = "이메일", example = "test@test.com")
-    @Email
+    @field:Email
+    @field:Size(max = 255)
     val email: String,
     @Schema(description = "인증코드", example = "123456")
     @Size(min = 6, max = 6, message = "인증번호는 6자리 입니다.")

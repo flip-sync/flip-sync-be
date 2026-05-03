@@ -42,33 +42,39 @@ class ScoreJoinRepository(
         }
 
         builder.and(score.group.id.eq(groupId))
+        val firstScoreImage = QScoreImage("firstScoreImage")
 
 
         val subScoreImage = QScoreImage("subScoreImage") // 서브쿼리에서 사용할 별칭
 
 // 서브쿼리: score_id가 같은 row 중 order가 가장 작은 url만 추출
-        val firstImageUrl = JPAExpressions
-            .select(subScoreImage.url)
+        val firstImageOrder = JPAExpressions
+            .select(subScoreImage.order.min())
             .from(subScoreImage)
             .where(subScoreImage.score.eq(score))
-            .orderBy(subScoreImage.order.asc())
-            .limit(1)
 
 
         val mainQuery = jpaQueryFactory.select(
             QScoreGetPageResDto(
                 score.id,
-                firstImageUrl,
+                score.uploadedUserId,
+                firstScoreImage.url,
                 score.title,
                 score.singer,
                 score.code,
                 user.name,
+                user.profileImageUrl,
                 score.createdAt,
                 score.modifiedAt
             )
         )
             .from(score)
             .leftJoin(user).on(score.uploadedUserId.eq(user.id))
+            .leftJoin(firstScoreImage)
+            .on(
+                firstScoreImage.score.eq(score)
+                    .and(firstScoreImage.order.eq(firstImageOrder))
+            )
             .where(builder)
 
         // Pageable의 sort 정보를 이용한 정렬 로직

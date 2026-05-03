@@ -10,6 +10,9 @@ data class GroupUsersGetListResDto(
     @Schema(description = "유저 이름", example = "오재영")
     val name: String,
 
+    @Schema(description = "유저 프로필 이미지", example = "https://example.com/profile.png")
+    val profileImageUrl: String? = null,
+
     @Schema(description = "참여 일자", example = "2025-02-10 20:27:33")
     val joinedAt: String
 )

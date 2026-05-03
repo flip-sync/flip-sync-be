@@ -14,6 +14,7 @@ dependencies {
 
     // security
     api("org.springframework.boot:spring-boot-starter-security")
+    api("org.springframework.boot:spring-boot-starter-websocket")
 
     // mailer
     api("org.springframework.boot:spring-boot-starter-mail")

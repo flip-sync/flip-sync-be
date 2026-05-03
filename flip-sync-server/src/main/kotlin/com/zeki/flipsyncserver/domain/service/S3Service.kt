@@ -6,31 +6,54 @@ import com.zeki.common.exception.ApiException
 import com.zeki.common.exception.ResponseCode
 import org.apache.tika.Tika
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.core.env.Environment
+import org.springframework.core.env.Profiles
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.util.*
 import java.util.function.Consumer
 
 @Service
 class S3Service(
     private val amazonS3Client: AmazonS3Client,
+    private val environment: Environment,
 
     @Value("\${cloud.aws.s3.bucket}")
     private val bucket: String,
     @Value("\${cloud.aws.s3.object-link}")
     private val objectLink: String,
     @Value("\${cloud.aws.s3.link-start}")
-    private val linkStart: String
+    private val linkStart: String,
+    @Value("\${flipsync.local-upload.enabled:false}")
+    private val localUploadEnabled: Boolean,
+    @Value("\${flipsync.local-upload.base-url:http://10.0.2.2:8080}")
+    private val localUploadBaseUrl: String
 ) {
     companion object {
         const val DIR = ""
+        private val LOCAL_UPLOAD_ROOT: Path = Path.of(System.getProperty("java.io.tmpdir"), "flipsync-local-upload")
     }
 
     fun createUrl(file: MultipartFile, path: String): String {
-        return objectLink + putFile(file, path)
+        if (localUploadEnabled) {
+            return createLocalUrl(file, path)
+        }
+
+        return try {
+            objectLink + putFile(file, path)
+        } catch (exception: Exception) {
+            if (environment.acceptsProfiles(Profiles.of("test", "dev"))) {
+                createLocalUrl(file, path)
+            } else {
+                throw exception
+            }
+        }
     }
 
     private fun putFile(multipartFile: MultipartFile, path: String): String {
@@ -125,6 +148,19 @@ class S3Service(
         } while (objectListing.isTruncated)
 
         return keyList
+    }
+
+    private fun createLocalUrl(file: MultipartFile, path: String): String {
+        val originFileName = file.originalFilename ?: throw ApiException(
+            ResponseCode.S3_UPLOAD_FAILED,
+            "originalFilename is null."
+        )
+        val fileName = createFileName(originFileName, path)
+        Files.createDirectories(LOCAL_UPLOAD_ROOT)
+        file.inputStream.use { inputStream ->
+            Files.copy(inputStream, LOCAL_UPLOAD_ROOT.resolve(fileName), StandardCopyOption.REPLACE_EXISTING)
+        }
+        return "${localUploadBaseUrl.removeSuffix("/")}/local-upload/$fileName"
     }
 
 }

@@ -1,11 +1,14 @@
-package com.zeki.flipsyncserver.domain.controller
+﻿package com.zeki.flipsyncserver.domain.controller
 
 import com.zeki.common.dto.CommonResDto
 import com.zeki.flipsyncserver.config.security.UserDetailsImpl
 import com.zeki.flipsyncserver.domain.dto.request.GroupCreateReqDto
+import com.zeki.flipsyncserver.domain.dto.request.GroupJoinReqDto
+import com.zeki.flipsyncserver.domain.dto.response.GroupGetDetailResDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupGetListResDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupUsersGetListResDto
 import com.zeki.flipsyncserver.domain.service.GroupService
+import com.zeki.flipsyncserver.domain.service.OrganizationHeader
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -25,137 +28,117 @@ import org.springframework.web.bind.annotation.*
 class GroupController(
     private val groupService: GroupService
 ) {
-
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
             ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
-            ApiResponse(responseCode = "409", ref = "#/components/responses/CONFLICT_DATA"),
+            ApiResponse(responseCode = "409", ref = "#/components/responses/CONFLICT_DATA")
         ]
     )
     @Operation(
-        summary = "그룹 생성",
-        description = "",
+        summary = "방 생성",
         security = [SecurityRequirement(name = "Authorization")]
     )
     @PostMapping("")
     fun createGroup(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
         @Valid @RequestBody reqDto: GroupCreateReqDto
     ): CommonResDto<Long> {
-        val data = groupService.createGroup(userDetail, reqDto)
-        return CommonResDto.success(data)
+        return CommonResDto.success(groupService.createGroup(userDetail, organizationId, reqDto))
     }
 
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
-            ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
-        ]
-    )
     @Operation(
-        summary = "내가 속한 그룹 전체 조회",
-        description = "",
+        summary = "내가 참여 중인 방 목록 조회",
         security = [SecurityRequirement(name = "Authorization")]
     )
     @GetMapping("/my")
-    public fun getMyGroupList(
+    fun getMyGroupList(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
         @ParameterObject @PageableDefault pageable: Pageable
     ): CommonResDto<Page<GroupGetListResDto>> {
-        val data = groupService.getMyGroupList(userDetail, pageable)
-        return CommonResDto.success(data)
+        return CommonResDto.success(groupService.getMyGroupList(userDetail, organizationId, pageable))
     }
 
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
-            ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
-        ]
-    )
     @Operation(
-        summary = "참여 가능한 그룹 전체 조회",
-        description = "",
+        summary = "선택된 조직의 방 목록 조회",
         security = [SecurityRequirement(name = "Authorization")]
     )
     @GetMapping("")
-    public fun getGroupList(
+    fun getGroupList(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
         @ParameterObject @PageableDefault pageable: Pageable
     ): CommonResDto<Page<GroupGetListResDto>> {
-        val data = groupService.getGroupList(userDetail, pageable)
-        return CommonResDto.success(data)
+        return CommonResDto.success(groupService.getGroupList(userDetail, organizationId, pageable))
+    }
+
+    @Operation(
+        summary = "방 상세 조회",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
+    @GetMapping("/{groupId}")
+    fun getGroupDetail(
+        @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
+        @PathVariable groupId: Long
+    ): CommonResDto<GroupGetDetailResDto> {
+        return CommonResDto.success(groupService.getGroupDetail(userDetail, organizationId, groupId))
     }
 
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
             ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
-            ApiResponse(responseCode = "409", ref = "#/components/responses/CONFLICT_DATA"),
+            ApiResponse(responseCode = "409", ref = "#/components/responses/CONFLICT_DATA")
         ]
     )
     @Operation(
-        summary = "그룹 참여",
-        description = "",
+        summary = "방 참여",
         security = [SecurityRequirement(name = "Authorization")]
     )
     @PostMapping("/join")
-    public fun joinGroup(
+    fun joinGroup(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
-        @RequestParam groupId: Long
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
+        @Valid @RequestBody reqDto: GroupJoinReqDto
     ): CommonResDto<Unit> {
-        groupService.joinGroup(userDetail, groupId)
+        groupService.joinGroup(userDetail, organizationId, reqDto)
         return CommonResDto.success()
     }
 
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
-            ApiResponse(
-                responseCode = "403",
-                ref = "#/components/responses/UNMODIFIABLE_INFORMATION"
-            ),
-            ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
+            ApiResponse(responseCode = "403", ref = "#/components/responses/UNMODIFIABLE_INFORMATION"),
+            ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND")
         ]
     )
     @Operation(
-        summary = "그룹 떠나기",
-        description = """
-            그룹에 남은인원이 1명이면 그룹도 삭제됩니다.
-            생성자 이면서 남은 인원이 2명이상 이라면 그룹을 떠날 수 없음. (403_1 에러 발생)
-            """,
+        summary = "방 나가기",
         security = [SecurityRequirement(name = "Authorization")]
     )
     @DeleteMapping("/leave")
-    public fun leaveGroup(
+    fun leaveGroup(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
         @RequestParam groupId: Long
     ): CommonResDto<Unit> {
-        groupService.leaveGroup(userDetail, groupId)
+        groupService.leaveGroup(userDetail, organizationId, groupId)
         return CommonResDto.success()
     }
 
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
-            ApiResponse(
-                responseCode = "403",
-                ref = "#/components/responses/UNMODIFIABLE_INFORMATION"
-            ),
-            ApiResponse(responseCode = "404", ref = "#/components/responses/RESOURCE_NOT_FOUND"),
-        ]
-    )
     @Operation(
-        summary = "그룹 참여자 전체 조회",
-        description = "",
+        summary = "방 참여 멤버 목록 조회",
         security = [SecurityRequirement(name = "Authorization")]
     )
     @GetMapping("/users")
-    public fun getGroupUsersList(
+    fun getGroupUsersList(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
         @RequestParam groupId: Long
     ): CommonResDto<List<GroupUsersGetListResDto>> {
-        val data = groupService.getGroupUsersList(userDetail, groupId)
-        return CommonResDto.success(data)
+        return CommonResDto.success(groupService.getGroupUsersList(userDetail, organizationId, groupId))
     }
 }
