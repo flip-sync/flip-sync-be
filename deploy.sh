@@ -1,8 +1,8 @@
 #!/bin/bash
 
 set -euo pipefail
-trap 'status=$?; echo "FAILED_AT_LINE=$LINENO EXIT_CODE=$status COMMAND=$BASH_COMMAND"; exit $status' ERR
-
+echo 'status=$?; echo "FAILED_AT_LINE=$LINENO EXIT_CODE=$status COMMAND=$BASH_COMMAND"; exit $status' ERR
+trap
 REPO_NAME=${1:-}
 DIR_PROJECT=${2:-}
 BLUE_PORT=${3:-}

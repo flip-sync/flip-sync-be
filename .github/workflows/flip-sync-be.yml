@@ -66,6 +66,8 @@ jobs:
       - name: Deploy to Server
         run: |
           set -e
+          export PS4='+ [${LINENO}] '
+          set -x
           
           # rsa 키 생성
           # github secrets에 등록된 key를 .ssh/id_rsa에 저장
