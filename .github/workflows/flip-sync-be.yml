@@ -92,8 +92,12 @@ jobs:
           scp ./deploy.sh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }}:$PROJECT_DIR
           
           # deploy.sh 진단
-          ssh -T ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "set -e; ls -l $PROJECT_DIR/deploy.sh; file $PROJECT_DIR/deploy.sh; sed -n '1,20p' $PROJECT_DIR/deploy.sh; sudo -n true; sudo bash -n $PROJECT_DIR/deploy.sh"
+          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] connected'; whoami; pwd"
+          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] project dir'; ls -ld $PROJECT_DIR"
+          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] deploy file'; ls -l $PROJECT_DIR/deploy.sh; sed -n '1,20p' $PROJECT_DIR/deploy.sh"
+          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] sudo'; sudo -n -l"
+          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] bash -n'; sudo bash -n $PROJECT_DIR/deploy.sh"
           
           # deploy.sh 실행
-          ssh -T ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "set -e; sudo bash $PROJECT_DIR/deploy.sh ${{ env.SERVICE_NAME }} $PROJECT_DIR '${{ env.BLUE_PORT }}' '${{ env.GREEN_PORT }}' '${{ env.INNER_PORT }}' '${{ env.TIME_DELATE }}' '${{ secrets.DOCKER_USERNAME }}' '${{ secrets.DOCKER_TOKEN }}' '${{ secrets.NGINX_DOMAIN }}' ''"
+          ssh -T ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "set -e; sudo bash -x $PROJECT_DIR/deploy.sh ${{ env.SERVICE_NAME }} $PROJECT_DIR '${{ env.BLUE_PORT }}' '${{ env.GREEN_PORT }}' '${{ env.INNER_PORT }}' '${{ env.TIME_DELATE }}' '${{ secrets.DOCKER_USERNAME }}' '${{ secrets.DOCKER_TOKEN }}' '${{ secrets.NGINX_DOMAIN }}' ''"
         shell: bash
