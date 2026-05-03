@@ -77,27 +77,37 @@ jobs:
           
           
           # known_hosts 파일에 내용 추가 (서버의 공개키 등록)
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo "[runtime] before ssh-keyscan"
+          ssh-keyscan -T 5 -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
           
           # PROJECT_DIR 정의
           PROJECT_DIR=/home/${{ secrets.SERVER_USERNAME }}/docker/${{ env.SERVICE_NAME }}
           
           # 서버에 디렉토리 생성 및 권한 설정
-          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "sudo mkdir -p $PROJECT_DIR && sudo chmod -R 755 $PROJECT_DIR"
+          echo "[runtime] before mkdir/chmod"
+          ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "sudo mkdir -p $PROJECT_DIR && sudo chmod -R 755 $PROJECT_DIR"
           
           # 소유권 변경
-          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "sudo chown -R ${{ secrets.SERVER_USERNAME }}:${{ secrets.SERVER_USERNAME }} $PROJECT_DIR"
+          echo "[runtime] before chown"
+          ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "sudo chown -R ${{ secrets.SERVER_USERNAME }}:${{ secrets.SERVER_USERNAME }} $PROJECT_DIR"
           
           # deploy.sh 파일 전송
-          scp ./deploy.sh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }}:$PROJECT_DIR
+          echo "[runtime] before scp deploy.sh"
+          scp -o ConnectTimeout=5 ./deploy.sh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }}:$PROJECT_DIR
           
           # deploy.sh 진단
-          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] connected'; whoami; pwd"
-          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] project dir'; ls -ld $PROJECT_DIR"
-          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] deploy file'; ls -l $PROJECT_DIR/deploy.sh; sed -n '1,20p' $PROJECT_DIR/deploy.sh"
-          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] sudo'; sudo -n -l"
-          ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] bash -n'; sudo bash -n $PROJECT_DIR/deploy.sh"
+          echo "[runtime] before diag connected"
+          ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] connected'; whoami; pwd"
+          echo "[runtime] before diag project dir"
+          ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] project dir'; ls -ld $PROJECT_DIR"
+          echo "[runtime] before diag deploy file"
+          ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] deploy file'; ls -l $PROJECT_DIR/deploy.sh; sed -n '1,20p' $PROJECT_DIR/deploy.sh"
+          echo "[runtime] before diag sudo"
+          ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] sudo'; sudo -n -l"
+          echo "[runtime] before diag bash-n"
+          ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] bash -n'; sudo bash -n $PROJECT_DIR/deploy.sh"
           
           # deploy.sh 실행
-          ssh -T ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "set -e; sudo bash -x $PROJECT_DIR/deploy.sh ${{ env.SERVICE_NAME }} $PROJECT_DIR '${{ env.BLUE_PORT }}' '${{ env.GREEN_PORT }}' '${{ env.INNER_PORT }}' '${{ env.TIME_DELATE }}' '${{ secrets.DOCKER_USERNAME }}' '${{ secrets.DOCKER_TOKEN }}' '${{ secrets.NGINX_DOMAIN }}' ''"
+          echo "[runtime] before deploy exec"
+          ssh -T -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "set -e; sudo bash -x $PROJECT_DIR/deploy.sh ${{ env.SERVICE_NAME }} $PROJECT_DIR '${{ env.BLUE_PORT }}' '${{ env.GREEN_PORT }}' '${{ env.INNER_PORT }}' '${{ env.TIME_DELATE }}' '${{ secrets.DOCKER_USERNAME }}' '${{ secrets.DOCKER_TOKEN }}' '${{ secrets.NGINX_DOMAIN }}' ''"
         shell: bash
