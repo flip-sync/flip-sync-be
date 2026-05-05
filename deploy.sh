@@ -248,6 +248,9 @@ log_section "docker compose up"
 which docker-compose || exit 1
 
 docker-compose -f "$COMPOSE_FILE" pull "$TARGET_COLOR"
+if docker ps -a --format '{{.Names}}' | grep -q "^${REPO_NAME}-${TARGET_COLOR}$"; then
+  docker rm -f "${REPO_NAME}-${TARGET_COLOR}" || true
+fi
 docker-compose -f "$COMPOSE_FILE" up -d "$TARGET_COLOR"
 
 Target=$(http_code "$TARGET_PORT")
