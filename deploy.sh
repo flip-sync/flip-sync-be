@@ -248,8 +248,9 @@ log_section "docker compose up"
 which docker-compose || exit 1
 
 docker-compose -f "$COMPOSE_FILE" pull "$TARGET_COLOR"
-if docker ps -a --format '{{.Names}}' | grep -q "^${REPO_NAME}-${TARGET_COLOR}$"; then
-  docker rm -f "${REPO_NAME}-${TARGET_COLOR}" || true
+TARGET_CONTAINER_IDS=$(docker ps -a --filter "name=${REPO_NAME}-${TARGET_COLOR}" --format '{{.ID}}')
+if [ -n "$TARGET_CONTAINER_IDS" ]; then
+  echo "$TARGET_CONTAINER_IDS" | xargs -r docker rm -f
 fi
 docker-compose -f "$COMPOSE_FILE" up -d "$TARGET_COLOR"
 
