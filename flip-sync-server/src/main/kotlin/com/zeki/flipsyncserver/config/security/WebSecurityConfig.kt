@@ -49,6 +49,9 @@ class WebSecurityConfig(
 
             "/",
             "/error",
+            "/legal/**",
+            "/support",
+            "/support/**",
             "/local-upload/**",
 
             "/user/**",
