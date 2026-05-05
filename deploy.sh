@@ -202,13 +202,6 @@ log_section "create docker compose"
 
 : # live image is resolved from the running container or Docker Hub tag list
 
-# 태그 정보 가져오기
-BEFORE_TAG=$(curl -s -H "Authorization: Bearer $TOKEN" "$URL" | jq -r '
-:
-
-# 결과 출력
-echo "LIVE_IMAGE=$LIVE_IMAGE"
-
 cat << EOF > "$COMPOSE_FILE"
 services:
   ${TARGET_COLOR}:
