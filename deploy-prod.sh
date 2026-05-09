@@ -19,6 +19,7 @@ IMAGE_REPO="${NAMESPACE}/${REPO_NAME}"
 COMPOSE_FILE="${DIR_PROJECT}/docker-compose.yml"
 ENV_FILE="${DIR_PROJECT}/.env"
 NGINX_FILE="/etc/nginx/sites-available/${NGINX_DOMAIN}"
+MOB_NGINX_FALLBACK_FILE="/etc/nginx/sites-available/smr-signal-deck.conf"
 
 log_section() {
   echo "===================="
@@ -46,14 +47,49 @@ http_code() {
 
 extract_proxy_port() {
   local file=$1
-  sed -nE 's/.*proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:([0-9]+)\/?;.*/\1/p' "$file" | head -n1
+  awk '
+    /location[[:space:]]+\^~[[:space:]]+\/mob\// { in_mob=1 }
+    in_mob && /proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:[0-9]+\/?;/ {
+      line=$0
+      sub(/^.*127\.0\.0\.1:/, "", line)
+      sub(/\/?.*$/, "", line)
+      print line
+      exit
+    }
+    in_mob && /^[[:space:]]*}/ { in_mob=0 }
+  ' "$file"
 }
 
 replace_proxy_port() {
   local file=$1
   local current_port=$2
   local target_port=$3
-  sed -i -E "0,/proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:${current_port}(\/)?;/s//proxy_pass http:\/\/127.0.0.1:${target_port}\1;/" "$file"
+  local tmp_file="${file}.tmp.$$"
+  awk -v current_port="$current_port" -v target_port="$target_port" '
+    /location[[:space:]]+\^~[[:space:]]+\/mob\// { in_mob=1 }
+    in_mob && $0 ~ "proxy_pass[[:space:]]+http://127\\.0\\.0\\.1:" current_port "(/)?;" {
+      sub("127\\.0\\.0\\.1:" current_port, "127.0.0.1:" target_port)
+    }
+    { print }
+    in_mob && /^[[:space:]]*}/ { in_mob=0 }
+  ' "$file" > "$tmp_file"
+  mv "$tmp_file" "$file"
+}
+
+resolve_nginx_file() {
+  local configured_file=$1
+
+  if [ -f "$configured_file" ] && grep -q 'location[[:space:]]\+\^~[[:space:]]\+/mob/' "$configured_file"; then
+    echo "$configured_file"
+    return
+  fi
+
+  if [ -f "$MOB_NGINX_FALLBACK_FILE" ] && grep -q 'location[[:space:]]\+\^~[[:space:]]\+/mob/' "$MOB_NGINX_FALLBACK_FILE"; then
+    echo "$MOB_NGINX_FALLBACK_FILE"
+    return
+  fi
+
+  echo "$configured_file"
 }
 
 find_live_image() {
@@ -125,6 +161,11 @@ log_section "port check"
 if [ ! -f "$NGINX_FILE" ]; then
   echo "Nginx file not found: $NGINX_FILE"
   exit 1
+fi
+RESOLVED_NGINX_FILE=$(resolve_nginx_file "$NGINX_FILE")
+if [ "$RESOLVED_NGINX_FILE" != "$NGINX_FILE" ]; then
+  echo "Using mob nginx file: $RESOLVED_NGINX_FILE"
+  NGINX_FILE="$RESOLVED_NGINX_FILE"
 fi
 echo "proxy_pass lines in $NGINX_FILE"
 grep -n 'proxy_pass' "$NGINX_FILE" || true
