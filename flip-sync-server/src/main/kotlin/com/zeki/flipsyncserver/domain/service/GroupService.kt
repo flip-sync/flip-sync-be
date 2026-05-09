@@ -174,6 +174,26 @@ class GroupService(
         deleteGroupFully(group)
     }
 
+    @Transactional
+    fun kickGroupMember(userDetail: UserDetailsImpl, organizationId: Long, groupId: Long, targetUserId: Long) {
+        val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
+        val group = getGroupEntity(userDetail, organizationId, groupId)
+
+        if (group.creator.id != userEntity.id) {
+            throw ApiException(ResponseCode.FORBIDDEN, "ROOM_OWNER_ONLY")
+        }
+
+        if (targetUserId == userEntity.id || targetUserId == group.creator.id) {
+            throw ApiException(ResponseCode.BAD_REQUEST, "ROOM_OWNER_CANNOT_KICK_SELF")
+        }
+
+        if (!groupUserRepository.existsByGroup_IdAndUsers_Id(groupId, targetUserId)) {
+            throw ApiException(ResponseCode.RESOURCE_NOT_FOUND, "ROOM_MEMBER_NOT_FOUND")
+        }
+
+        groupUserRepository.deleteByGroup_IdAndUsers_Id(groupId, targetUserId)
+    }
+
     @Transactional(readOnly = true)
     fun getGroupUsersList(
         userDetail: UserDetailsImpl,

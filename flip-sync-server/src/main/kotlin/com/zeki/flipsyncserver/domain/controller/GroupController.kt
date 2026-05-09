@@ -174,6 +174,21 @@ class GroupController(
     }
 
     @Operation(
+        summary = "방 멤버 강퇴",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
+    @DeleteMapping("/{groupId}/users/{targetUserId}")
+    fun kickGroupMember(
+        @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
+        @PathVariable groupId: Long,
+        @PathVariable targetUserId: Long
+    ): CommonResDto<Unit> {
+        groupService.kickGroupMember(userDetail, organizationId, groupId, targetUserId)
+        return CommonResDto.success()
+    }
+
+    @Operation(
         summary = "방 참여 멤버 목록 조회",
         security = [SecurityRequirement(name = "Authorization")]
     )
