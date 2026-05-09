@@ -6,6 +6,7 @@ import com.zeki.flipsyncserver.config.security.jwt.JwtAuthenticationFilter
 import com.zeki.flipsyncserver.config.security.jwt.JwtTokenProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -49,6 +50,8 @@ class WebSecurityConfig(
 
             "/",
             "/error",
+            "/invite/**",
+            "/mob/invite/**",
             "/legal/**",
             "/mob/legal/**",
             "/support",
@@ -70,6 +73,7 @@ class WebSecurityConfig(
         http
             .authorizeHttpRequests { authorizeHttpRequests ->
                 authorizeHttpRequests
+                    .requestMatchers(HttpMethod.GET, "/app/version-policy").permitAll()
                     .requestMatchers(*publicMatchers).permitAll()
                     .anyRequest().authenticated()
             }
