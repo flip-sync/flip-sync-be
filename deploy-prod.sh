@@ -52,7 +52,7 @@ extract_proxy_port() {
     in_mob && /proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:[0-9]+\/?;/ {
       line=$0
       sub(/^.*127\.0\.0\.1:/, "", line)
-      sub(/\/?.*$/, "", line)
+      sub(/[^0-9].*$/, "", line)
       print line
       exit
     }
