@@ -4,7 +4,9 @@ import com.zeki.common.dto.CommonResDto
 import com.zeki.flipsyncserver.config.security.UserDetailsImpl
 import com.zeki.flipsyncserver.domain.dto.request.GroupCreateReqDto
 import com.zeki.flipsyncserver.domain.dto.request.GroupJoinReqDto
+import com.zeki.flipsyncserver.domain.dto.request.GroupOwnerTransferReqDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupGetDetailResDto
+import com.zeki.flipsyncserver.domain.dto.response.GroupInviteInfoResDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupGetListResDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupUsersGetListResDto
 import com.zeki.flipsyncserver.domain.service.GroupService
@@ -87,6 +89,18 @@ class GroupController(
         return CommonResDto.success(groupService.getGroupDetail(userDetail, organizationId, groupId))
     }
 
+    @Operation(
+        summary = "방 초대 정보 및 멤버 검증",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
+    @GetMapping("/invite/{groupId}")
+    fun getGroupInviteInfo(
+        @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @PathVariable groupId: Long
+    ): CommonResDto<GroupInviteInfoResDto> {
+        return CommonResDto.success(groupService.getGroupInviteInfo(userDetail, groupId))
+    }
+
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "401", ref = "#/components/responses/UNAUTHORIZED"),
@@ -123,9 +137,39 @@ class GroupController(
     fun leaveGroup(
         @AuthenticationPrincipal userDetail: UserDetailsImpl,
         @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
-        @RequestParam groupId: Long
+        @RequestParam groupId: Long,
+        @RequestParam(required = false) delegateUserId: Long?
     ): CommonResDto<Unit> {
-        groupService.leaveGroup(userDetail, organizationId, groupId)
+        groupService.leaveGroup(userDetail, organizationId, groupId, delegateUserId)
+        return CommonResDto.success()
+    }
+
+    @Operation(
+        summary = "방장 위임",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
+    @PatchMapping("/{groupId}/owner")
+    fun transferGroupOwner(
+        @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
+        @PathVariable groupId: Long,
+        @Valid @RequestBody reqDto: GroupOwnerTransferReqDto
+    ): CommonResDto<Unit> {
+        groupService.transferGroupOwner(userDetail, organizationId, groupId, reqDto.delegateUserId)
+        return CommonResDto.success()
+    }
+
+    @Operation(
+        summary = "방 삭제",
+        security = [SecurityRequirement(name = "Authorization")]
+    )
+    @DeleteMapping("/{groupId}")
+    fun deleteGroup(
+        @AuthenticationPrincipal userDetail: UserDetailsImpl,
+        @RequestHeader(OrganizationHeader.NAME) organizationId: Long,
+        @PathVariable groupId: Long
+    ): CommonResDto<Unit> {
+        groupService.deleteGroup(userDetail, organizationId, groupId)
         return CommonResDto.success()
     }
 

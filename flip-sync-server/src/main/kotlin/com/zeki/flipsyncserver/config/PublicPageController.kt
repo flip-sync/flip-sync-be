@@ -5,6 +5,7 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.ResponseBody
 
 @Controller
@@ -519,6 +520,387 @@ class PublicPageController {
         </html>
         """.trimIndent()
     )
+
+    @GetMapping(
+        value = [
+            "/invite/{groupId}",
+            "/invite/{groupId}/",
+            "/mob/invite/{groupId}",
+            "/mob/invite/{groupId}/"
+        ],
+        produces = [MediaType.TEXT_HTML_VALUE]
+    )
+    @ResponseBody
+    fun invite(@PathVariable groupId: Long): ResponseEntity<String> {
+        return htmlResponse(buildStableInviteHtml(groupId))
+    }
+
+    /*
+        """
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>FlipSync 악보 공유방 초대</title>
+            <style>
+                :root {
+                    color-scheme: light;
+                    --bg: #f4f8fb;
+                    --card: #ffffff;
+                    --text: #172033;
+                    --muted: #65708a;
+                    --line: #dce8f3;
+                    --primary: #4ec0e9;
+                    --primary-dark: #2299c8;
+                    --primary-soft: #e8f8fd;
+                }
+                * { box-sizing: border-box; }
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+                    font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+                    background:
+                        radial-gradient(circle at 16% 8%, #dff7ff 0, transparent 32%),
+                        radial-gradient(circle at 88% 0%, #eef9ff 0, transparent 28%),
+                        linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+                    color: var(--text);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 28px 18px;
+                }
+                .card {
+                    width: min(100%, 420px);
+                    padding: 30px 24px 24px;
+                    border: 1px solid var(--line);
+                    border-radius: 28px;
+                    background: rgba(255, 255, 255, 0.94);
+                    box-shadow: 0 24px 70px rgba(34, 52, 93, 0.12);
+                    text-align: center;
+                }
+                .badge {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 7px 13px;
+                    border-radius: 999px;
+                    background: var(--primary-soft);
+                    color: var(--primary-dark);
+                    font-size: 13px;
+                    font-weight: 800;
+                }
+                h1 {
+                    margin: 18px 0 10px;
+                    font-size: clamp(28px, 8vw, 38px);
+                    line-height: 1.18;
+                    letter-spacing: -0.04em;
+                }
+                p {
+                    margin: 0;
+                    color: var(--muted);
+                    font-size: 15px;
+                    line-height: 1.7;
+                }
+                .room {
+                    margin: 22px 0;
+                    padding: 16px;
+                    border-radius: 18px;
+                    background: #f7fbfd;
+                    border: 1px solid var(--line);
+                }
+                .room span {
+                    display: block;
+                    color: var(--muted);
+                    font-size: 13px;
+                    font-weight: 700;
+                }
+                .room strong {
+                    display: block;
+                    margin-top: 4px;
+                    font-size: 24px;
+                    letter-spacing: 0.02em;
+                }
+                .button {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    min-height: 54px;
+                    border-radius: 16px;
+                    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                    color: #ffffff;
+                    font-size: 17px;
+                    font-weight: 900;
+                    text-decoration: none;
+                    box-shadow: 0 14px 30px rgba(46, 156, 208, 0.24);
+                }
+                .hint {
+                    margin-top: 14px;
+                    font-size: 13px;
+                }
+            </style>
+        </head>
+        <body>
+            <main class="card">
+                <div class="badge">FlipSync Invite</div>
+                <h1>악보 공유방에 초대받았어요</h1>
+                <p>입장하기를 누르면 FlipSync 앱이 열리고 초대된 방으로 이동합니다.</p>
+                <div class="room">
+                    <span>방 번호</span>
+                    <strong>$groupId</strong>
+                </div>
+                <a class="button" href="flipsync:///invite/$groupId">입장하기</a>
+                <p class="hint">앱이 열리지 않으면 FlipSync 설치 여부를 확인해 주세요.</p>
+            </main>
+        </body>
+        </html>
+        """.trimIndent()
+    )
+
+    */
+
+    private fun buildStableInviteHtml(groupId: Long): String = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>FlipSync Room Invite</title>
+            <style>
+                :root {
+                    color-scheme: light;
+                    --bg: #f4f8fb;
+                    --card: #ffffff;
+                    --text: #172033;
+                    --muted: #65708a;
+                    --line: #dce8f3;
+                    --primary: #4ec0e9;
+                    --primary-dark: #2299c8;
+                    --primary-soft: #e8f8fd;
+                }
+                * { box-sizing: border-box; }
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    background:
+                        radial-gradient(circle at 16% 8%, #dff7ff 0, transparent 32%),
+                        radial-gradient(circle at 88% 0%, #eef9ff 0, transparent 28%),
+                        linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+                    color: var(--text);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 28px 18px;
+                }
+                .card {
+                    width: min(100%, 420px);
+                    padding: 30px 24px 24px;
+                    border: 1px solid var(--line);
+                    border-radius: 28px;
+                    background: rgba(255, 255, 255, 0.94);
+                    box-shadow: 0 24px 70px rgba(34, 52, 93, 0.12);
+                    text-align: center;
+                }
+                .badge {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 7px 13px;
+                    border-radius: 999px;
+                    background: var(--primary-soft);
+                    color: var(--primary-dark);
+                    font-size: 13px;
+                    font-weight: 800;
+                }
+                h1 {
+                    margin: 18px 0 10px;
+                    font-size: clamp(28px, 8vw, 38px);
+                    line-height: 1.18;
+                    letter-spacing: -0.04em;
+                }
+                p {
+                    margin: 0;
+                    color: var(--muted);
+                    font-size: 15px;
+                    line-height: 1.7;
+                }
+                .room {
+                    margin: 22px 0;
+                    padding: 16px;
+                    border-radius: 18px;
+                    background: #f7fbfd;
+                    border: 1px solid var(--line);
+                }
+                .room span {
+                    display: block;
+                    color: var(--muted);
+                    font-size: 13px;
+                    font-weight: 700;
+                }
+                .room strong {
+                    display: block;
+                    margin-top: 4px;
+                    font-size: 24px;
+                    letter-spacing: 0.02em;
+                }
+                .button {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    min-height: 54px;
+                    border-radius: 16px;
+                    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                    color: #ffffff;
+                    font-size: 17px;
+                    font-weight: 900;
+                    text-decoration: none;
+                    box-shadow: 0 14px 30px rgba(46, 156, 208, 0.24);
+                }
+                .hint {
+                    margin-top: 14px;
+                    font-size: 13px;
+                }
+            </style>
+        </head>
+        <body>
+            <main class="card">
+                <div class="badge">FlipSync Invite</div>
+                <h1>You are invited to a FlipSync room</h1>
+                <p>Tap Enter room to open FlipSync and continue to the shared score room.</p>
+                <div class="room">
+                    <span>Room number</span>
+                    <strong>$groupId</strong>
+                </div>
+                <a class="button" href="flipsync:///invite/$groupId">Enter room</a>
+                <p class="hint">If the app does not open, please check that FlipSync is installed.</p>
+            </main>
+        </body>
+        </html>
+        """.trimIndent()
+
+    private fun buildInviteHtml(groupId: Long): String = """
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>FlipSync 방 초대</title>
+            <style>
+                :root {
+                    color-scheme: light;
+                    --bg: #f4f8fb;
+                    --card: #ffffff;
+                    --text: #172033;
+                    --muted: #65708a;
+                    --line: #dce8f3;
+                    --primary: #4ec0e9;
+                    --primary-dark: #2299c8;
+                    --primary-soft: #e8f8fd;
+                }
+                * { box-sizing: border-box; }
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+                    font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+                    background:
+                        radial-gradient(circle at 16% 8%, #dff7ff 0, transparent 32%),
+                        radial-gradient(circle at 88% 0%, #eef9ff 0, transparent 28%),
+                        linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+                    color: var(--text);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 28px 18px;
+                }
+                .card {
+                    width: min(100%, 420px);
+                    padding: 30px 24px 24px;
+                    border: 1px solid var(--line);
+                    border-radius: 28px;
+                    background: rgba(255, 255, 255, 0.94);
+                    box-shadow: 0 24px 70px rgba(34, 52, 93, 0.12);
+                    text-align: center;
+                }
+                .badge {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 7px 13px;
+                    border-radius: 999px;
+                    background: var(--primary-soft);
+                    color: var(--primary-dark);
+                    font-size: 13px;
+                    font-weight: 800;
+                }
+                h1 {
+                    margin: 18px 0 10px;
+                    font-size: clamp(28px, 8vw, 38px);
+                    line-height: 1.18;
+                    letter-spacing: -0.04em;
+                }
+                p {
+                    margin: 0;
+                    color: var(--muted);
+                    font-size: 15px;
+                    line-height: 1.7;
+                }
+                .room {
+                    margin: 22px 0;
+                    padding: 16px;
+                    border-radius: 18px;
+                    background: #f7fbfd;
+                    border: 1px solid var(--line);
+                }
+                .room span {
+                    display: block;
+                    color: var(--muted);
+                    font-size: 13px;
+                    font-weight: 700;
+                }
+                .room strong {
+                    display: block;
+                    margin-top: 4px;
+                    font-size: 24px;
+                    letter-spacing: 0.02em;
+                }
+                .button {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    min-height: 54px;
+                    border-radius: 16px;
+                    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                    color: #ffffff;
+                    font-size: 17px;
+                    font-weight: 900;
+                    text-decoration: none;
+                    box-shadow: 0 14px 30px rgba(46, 156, 208, 0.24);
+                }
+                .hint {
+                    margin-top: 14px;
+                    font-size: 13px;
+                }
+            </style>
+        </head>
+        <body>
+            <main class="card">
+                <div class="badge">FlipSync Invite</div>
+                <h1>악보 공유방에 초대받았어요</h1>
+                <p>입장하기를 누르면 FlipSync 앱이 열리고 초대받은 방으로 이동합니다.</p>
+                <div class="room">
+                    <span>방 번호</span>
+                    <strong>${'$'}groupId</strong>
+                </div>
+                <a class="button" href="flipsync:///invite/${'$'}groupId">입장하기</a>
+                <p class="hint">앱이 열리지 않으면 FlipSync 설치 여부를 확인해 주세요.</p>
+            </main>
+        </body>
+        </html>
+        """.trimIndent()
 
     private fun htmlResponse(document: String): ResponseEntity<String> = ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_TYPE, "${MediaType.TEXT_HTML_VALUE};charset=UTF-8")

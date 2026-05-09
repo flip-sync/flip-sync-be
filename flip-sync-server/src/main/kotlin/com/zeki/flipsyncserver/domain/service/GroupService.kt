@@ -7,10 +7,13 @@ import com.zeki.flipsyncdb.entity.Group
 import com.zeki.flipsyncdb.entity.GroupUser
 import com.zeki.flipsyncdb.repository.GroupRepository
 import com.zeki.flipsyncdb.repository.GroupUserRepository
+import com.zeki.flipsyncdb.repository.ScoreRepository
+import com.zeki.flipsyncdb.repository.SocreImageRepository
 import com.zeki.flipsyncserver.config.security.UserDetailsImpl
 import com.zeki.flipsyncserver.domain.dto.request.GroupCreateReqDto
 import com.zeki.flipsyncserver.domain.dto.request.GroupJoinReqDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupGetDetailResDto
+import com.zeki.flipsyncserver.domain.dto.response.GroupInviteInfoResDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupGetListResDto
 import com.zeki.flipsyncserver.domain.dto.response.GroupUsersGetListResDto
 import org.springframework.data.domain.Page
@@ -23,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional
 class GroupService(
     private val groupRepository: GroupRepository,
     private val groupUserRepository: GroupUserRepository,
+    private val scoreRepository: ScoreRepository,
+    private val socreImageRepository: SocreImageRepository,
     private val getUserEntityService: GetUserEntityService,
     private val organizationAccessService: OrganizationAccessService,
     private val passwordEncoder: PasswordEncoder
@@ -118,7 +123,7 @@ class GroupService(
     }
 
     @Transactional
-    fun leaveGroup(userDetail: UserDetailsImpl, organizationId: Long, groupId: Long) {
+    fun leaveGroup(userDetail: UserDetailsImpl, organizationId: Long, groupId: Long, delegateUserId: Long? = null) {
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
         val group = getGroupEntity(userDetail, organizationId, groupId)
         val groupUsersList = groupUserRepository.findByGroup_IdAndUsers_Id(groupId, userEntity.id!!)
@@ -130,14 +135,45 @@ class GroupService(
         val joinedMember = groupUsersList.first()
         val groupMembers = groupUserRepository.findByGroup_Id(groupId)
 
+        if (groupMembers.size == 1) {
+            deleteGroupFully(group)
+            return
+        }
+
         if (group.creator.id == userEntity.id && groupMembers.size > 1) {
-            throw ApiException(ResponseCode.UNMODIFIABLE_INFORMATION)
+            if (delegateUserId == null) {
+                throw ApiException(ResponseCode.UNMODIFIABLE_INFORMATION, "ROOM_OWNER_DELEGATE_REQUIRED")
+            }
+
+            transferGroupOwnerInternal(group, userEntity.id!!, delegateUserId)
         }
 
         groupUserRepository.delete(joinedMember)
-        if (groupMembers.size == 1) {
-            groupRepository.delete(group)
+    }
+
+    @Transactional
+    fun transferGroupOwner(
+        userDetail: UserDetailsImpl,
+        organizationId: Long,
+        groupId: Long,
+        delegateUserId: Long
+    ) {
+        val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
+        val group = getGroupEntity(userDetail, organizationId, groupId)
+
+        transferGroupOwnerInternal(group, userEntity.id!!, delegateUserId)
+    }
+
+    @Transactional
+    fun deleteGroup(userDetail: UserDetailsImpl, organizationId: Long, groupId: Long) {
+        val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
+        val group = getGroupEntity(userDetail, organizationId, groupId)
+
+        if (group.creator.id != userEntity.id) {
+            throw ApiException(ResponseCode.FORBIDDEN, "ROOM_OWNER_ONLY")
         }
+
+        deleteGroupFully(group)
     }
 
     @Transactional(readOnly = true)
@@ -189,6 +225,35 @@ class GroupService(
     }
 
     @Transactional(readOnly = true)
+    fun getGroupInviteInfo(userDetail: UserDetailsImpl, groupId: Long): GroupInviteInfoResDto {
+        val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
+        val group = groupRepository.findById(groupId)
+            .orElseThrow { ApiException(ResponseCode.RESOURCE_NOT_FOUND) }
+        val organization = group.organization
+        val organizationMember = organizationAccessService.getAccessibleOrganizationMember(userDetail, organization.id)
+        val joined = groupUserRepository.existsByUsersAndGroup(userEntity, group)
+
+        return GroupInviteInfoResDto(
+            groupId = group.id!!,
+            groupName = group.name,
+            organizationId = organization.id!!,
+            organizationName = organization.name,
+            organizationInviteCode = organization.inviteCode,
+            organizationCreatorId = organization.creator.id!!,
+            organizationCreatorName = organization.creator.name,
+            organizationMemberCount = organization.memberList.size.toLong(),
+            organizationRole = organizationMember.role.name,
+            organizationIsLeader = organizationMember.role.name == "LEADER",
+            creatorId = group.creator.id!!,
+            creatorName = group.creator.name,
+            currentMemberCount = group.groupUserList.size,
+            maxMemberCount = group.maxMemberCount,
+            hasPassword = group.hasPassword(),
+            joined = joined
+        )
+    }
+
+    @Transactional(readOnly = true)
     fun getGroupDetailForSocket(userDetail: UserDetailsImpl, groupId: Long): GroupGetDetailResDto {
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
         val group = groupRepository.findById(groupId)
@@ -225,5 +290,28 @@ class GroupService(
         }
 
         return group
+    }
+
+    private fun transferGroupOwnerInternal(group: Group, currentOwnerId: Long, delegateUserId: Long) {
+        if (group.creator.id != currentOwnerId) {
+            throw ApiException(ResponseCode.FORBIDDEN, "ROOM_OWNER_ONLY")
+        }
+
+        if (delegateUserId == currentOwnerId) {
+            throw ApiException(ResponseCode.BAD_REQUEST, "ROOM_OWNER_DELEGATE_SELF")
+        }
+
+        val delegateMember = groupUserRepository.findByGroup_IdAndUsers_Id(group.id!!, delegateUserId)
+            .firstOrNull()
+            ?: throw ApiException(ResponseCode.RESOURCE_NOT_FOUND, "ROOM_OWNER_DELEGATE_NOT_FOUND")
+
+        group.updateCreator(delegateMember.users)
+    }
+
+    private fun deleteGroupFully(group: Group) {
+        socreImageRepository.deleteByScore_Group(group)
+        scoreRepository.deleteByGroup(group)
+        groupUserRepository.deleteAll(groupUserRepository.findByGroup_Id(group.id!!))
+        groupRepository.delete(group)
     }
 }
