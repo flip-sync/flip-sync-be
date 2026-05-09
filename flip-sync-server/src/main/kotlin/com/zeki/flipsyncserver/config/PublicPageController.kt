@@ -662,11 +662,11 @@ class PublicPageController {
 
     private fun buildStableInviteHtml(groupId: Long): String = """
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="ko">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>FlipSync Room Invite</title>
+            <title>FlipSync 방 초대</title>
             <style>
                 :root {
                     color-scheme: light;
@@ -683,7 +683,7 @@ class PublicPageController {
                 body {
                     margin: 0;
                     min-height: 100vh;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
                     background:
                         radial-gradient(circle at 16% 8%, #dff7ff 0, transparent 32%),
                         radial-gradient(circle at 88% 0%, #eef9ff 0, transparent 28%),
@@ -767,15 +767,15 @@ class PublicPageController {
         </head>
         <body>
             <main class="card">
-                <div class="badge">FlipSync Invite</div>
-                <h1>You are invited to a FlipSync room</h1>
-                <p>Tap Enter room to open FlipSync and continue to the shared score room.</p>
+                <div class="badge">FlipSync 초대</div>
+                <h1>악보 공유방에 초대받았어요</h1>
+                <p>입장하기를 누르면 FlipSync 앱이 열리고 초대된 방으로 이동합니다.</p>
                 <div class="room">
-                    <span>Room number</span>
+                    <span>방 번호</span>
                     <strong>$groupId</strong>
                 </div>
-                <a class="button" href="flipsync:///invite/$groupId">Enter room</a>
-                <p class="hint">If the app does not open, please check that FlipSync is installed.</p>
+                <a class="button" href="flipsync:///invite/$groupId">입장하기</a>
+                <p class="hint">앱이 열리지 않으면 FlipSync 설치 여부를 확인해 주세요.</p>
             </main>
         </body>
         </html>
