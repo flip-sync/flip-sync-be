@@ -126,21 +126,19 @@ class GroupService(
     fun leaveGroup(userDetail: UserDetailsImpl, organizationId: Long, groupId: Long, delegateUserId: Long? = null) {
         val userEntity = getUserEntityService.getUserByUsername(userDetail.username)
         val group = getGroupEntity(userDetail, organizationId, groupId)
-        val groupUsersList = groupUserRepository.findByGroup_IdAndUsers_Id(groupId, userEntity.id!!)
 
-        if (groupUsersList.isEmpty()) {
+        if (!groupUserRepository.existsByGroup_IdAndUsers_Id(groupId, userEntity.id!!)) {
             throw ApiException(ResponseCode.RESOURCE_NOT_FOUND)
         }
 
-        val joinedMember = groupUsersList.first()
-        val groupMembers = groupUserRepository.findByGroup_Id(groupId)
+        val groupMemberCount = groupUserRepository.countByGroup_Id(groupId)
 
-        if (groupMembers.size == 1) {
+        if (groupMemberCount == 1L) {
             deleteGroupFully(group)
             return
         }
 
-        if (group.creator.id == userEntity.id && groupMembers.size > 1) {
+        if (group.creator.id == userEntity.id) {
             if (delegateUserId == null) {
                 throw ApiException(ResponseCode.UNMODIFIABLE_INFORMATION, "ROOM_OWNER_DELEGATE_REQUIRED")
             }
@@ -148,7 +146,7 @@ class GroupService(
             transferGroupOwnerInternal(group, userEntity.id!!, delegateUserId)
         }
 
-        groupUserRepository.delete(joinedMember)
+        groupUserRepository.deleteByGroup_IdAndUsers_Id(groupId, userEntity.id!!)
     }
 
     @Transactional
@@ -311,7 +309,7 @@ class GroupService(
     private fun deleteGroupFully(group: Group) {
         socreImageRepository.deleteByScore_Group(group)
         scoreRepository.deleteByGroup(group)
-        groupUserRepository.deleteAll(groupUserRepository.findByGroup_Id(group.id!!))
+        groupUserRepository.deleteByGroup(group)
         groupRepository.delete(group)
     }
 }
