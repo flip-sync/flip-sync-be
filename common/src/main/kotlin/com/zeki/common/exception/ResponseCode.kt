@@ -42,6 +42,9 @@ enum class ResponseCode(
     /* 409 Conflict - 클라이언트의 요청이 서버에서 충돌을 일으킨 경우 사용 */
     CONFLICT_DATA(HttpStatus.CONFLICT, "409_0", "데이터가 충돌되었습니다."),
 
+    /* 429 */
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "429_0", "요청 횟수가 너무 많습니다. 잠시 후 다시 시도해 주세요."),
+
     /* 500 */
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "500_0", "서버측 에러"),
     INTERNAL_SERVER_WEBCLIENT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "500_1", "WebClient 통신 에러"),

@@ -182,6 +182,8 @@ services:
       - ${DIR_PROJECT}/logs:/logs
     restart: always
     environment:
+      - SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=20MB
+      - SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=50MB
       - TZ=Asia/Seoul
   ${LIVE_COLOR}:
     image: ${LIVE_IMAGE}
@@ -194,6 +196,8 @@ services:
       - ${DIR_PROJECT}/logs:/logs
     restart: always
     environment:
+      - SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=20MB
+      - SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=50MB
       - TZ=Asia/Seoul
 EOF
 nl -ba "$COMPOSE_FILE"

@@ -1,8 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
-echo 'status=$?; echo "FAILED_AT_LINE=$LINENO EXIT_CODE=$status COMMAND=$BASH_COMMAND"; exit $status' ERR
-trap
+trap 'status=$?; echo "FAILED_AT_LINE=$LINENO EXIT_CODE=$status COMMAND=$BASH_COMMAND"; exit $status' ERR
 REPO_NAME=${1:-}
 DIR_PROJECT=${2:-}
 BLUE_PORT=${3:-}
@@ -214,6 +213,8 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=20MB
+      - SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=50MB
       - TZ=Asia/Seoul
   ${LIVE_COLOR}:
     image: ${LIVE_IMAGE}
@@ -225,6 +226,8 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=20MB
+      - SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=50MB
       - TZ=Asia/Seoul
 EOF
 nl -ba "$COMPOSE_FILE"

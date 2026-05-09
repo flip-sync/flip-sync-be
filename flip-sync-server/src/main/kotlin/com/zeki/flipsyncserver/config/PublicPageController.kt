@@ -10,7 +10,15 @@ import org.springframework.web.bind.annotation.ResponseBody
 @Controller
 class PublicPageController {
 
-    @GetMapping(value = ["/legal/privacy-policy", "/legal/privacy-policy/"], produces = [MediaType.TEXT_HTML_VALUE])
+    @GetMapping(
+        value = [
+            "/legal/privacy-policy",
+            "/legal/privacy-policy/",
+            "/mob/legal/privacy-policy",
+            "/mob/legal/privacy-policy/"
+        ],
+        produces = [MediaType.TEXT_HTML_VALUE]
+    )
     @ResponseBody
     fun privacyPolicy(): ResponseEntity<String> = htmlResponse(
         """
@@ -189,7 +197,15 @@ class PublicPageController {
         """.trimIndent()
     )
 
-    @GetMapping(value = ["/legal/account-deletion", "/legal/account-deletion/"], produces = [MediaType.TEXT_HTML_VALUE])
+    @GetMapping(
+        value = [
+            "/legal/account-deletion",
+            "/legal/account-deletion/",
+            "/mob/legal/account-deletion",
+            "/mob/legal/account-deletion/"
+        ],
+        produces = [MediaType.TEXT_HTML_VALUE]
+    )
     @ResponseBody
     fun accountDeletion(): ResponseEntity<String> = htmlResponse(
         """
@@ -362,7 +378,15 @@ class PublicPageController {
         """.trimIndent()
     )
 
-    @GetMapping(value = ["/support", "/support/"], produces = [MediaType.TEXT_HTML_VALUE])
+    @GetMapping(
+        value = [
+            "/support",
+            "/support/",
+            "/mob/support",
+            "/mob/support/"
+        ],
+        produces = [MediaType.TEXT_HTML_VALUE]
+    )
     @ResponseBody
     fun support(): ResponseEntity<String> = htmlResponse(
         """

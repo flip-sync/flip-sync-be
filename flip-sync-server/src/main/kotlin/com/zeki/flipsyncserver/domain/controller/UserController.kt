@@ -60,7 +60,8 @@ class UserController(
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "401", ref = "#/components/responses/EMAIL_VERIFY_UNAUTHORIZED"),
-            ApiResponse(responseCode = "404", ref = "#/components/responses/EMAIL_VERIFY_NOT_FOUND")
+            ApiResponse(responseCode = "404", ref = "#/components/responses/EMAIL_VERIFY_NOT_FOUND"),
+            ApiResponse(responseCode = "429", ref = "#/components/responses/TOO_MANY_REQUESTS")
         ]
     )
     @Operation(summary = "Request email verification", description = "", security = [])

@@ -153,6 +153,21 @@ class SwaggerConfig(
                     )
 
 
+                    .addResponses(
+                        "TOO_MANY_REQUESTS",
+                        ApiResponse().description("요청 횟수 초과").content(
+                            Content().addMediaType(
+                                "application/json",
+                                MediaType().example(
+                                    mapOf(
+                                        "code" to "429_0",
+                                        "message" to "요청 횟수가 너무 많습니다. 잠시 후 다시 시도해 주세요."
+                                    )
+                                )
+                            )
+                        )
+                    )
+
             )
     }
 }

@@ -31,6 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import java.time.Duration
 import java.time.LocalDateTime
 
 @Service
@@ -51,6 +52,10 @@ class UserService(
     private val emailService: EmailService,
     private val s3Service: S3Service
 ) {
+    companion object {
+        private const val VERIFY_CODE_TTL_MINUTES = 5L
+        private const val VERIFY_CODE_RESEND_COOLDOWN_SECONDS = 60L
+    }
 
     @Transactional
     fun signup(reqDto: UserSignupReqDto): Long {
@@ -64,9 +69,11 @@ class UserService(
 
     @Transactional
     fun createVerifyEmail(email: String) {
+        val now = LocalDateTime.now()
         val code = createCode()
-        val expiredAt = LocalDateTime.now().plusMinutes(5)
+        val expiredAt = now.plusMinutes(VERIFY_CODE_TTL_MINUTES)
         val emailVerify = emailVerifyRepository.findByEmail(email)?.apply {
+            validateVerifyEmailCooldown(this, now)
             reissue(code, expiredAt)
         } ?: EmailVerify.create(email, code, expiredAt)
 
@@ -76,6 +83,21 @@ class UserService(
 
     private fun createCode(): String {
         return (100000..999999).random().toString()
+    }
+
+    private fun validateVerifyEmailCooldown(emailVerify: EmailVerify, now: LocalDateTime) {
+        val requestedAt = emailVerify.expiredAt.minusMinutes(VERIFY_CODE_TTL_MINUTES)
+        val availableAt = requestedAt.plusSeconds(VERIFY_CODE_RESEND_COOLDOWN_SECONDS)
+
+        if (!availableAt.isAfter(now)) {
+            return
+        }
+
+        val remainingSeconds = Duration.between(now, availableAt).seconds.coerceAtLeast(1)
+        throw ApiException(
+            ResponseCode.TOO_MANY_REQUESTS,
+            "인증번호는 60초에 한 번만 요청할 수 있습니다. ${remainingSeconds}초 후 다시 시도해 주세요."
+        )
     }
 
     @Transactional
@@ -121,7 +143,7 @@ class UserService(
     @Transactional
     fun updateProfile(email: String, reqDto: UserUpdateProfileReqDto): UserProfileResDto {
         val user = getUserEntityService.getUserByUsername(email)
-        user.updateProfile(reqDto.name.trim(), reqDto.organization)
+        user.updateProfile(reqDto.name.trim(), user.bio)
         return user.toProfileResponse()
     }
 

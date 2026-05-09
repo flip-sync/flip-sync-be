@@ -50,11 +50,19 @@ class WebSecurityConfig(
             "/",
             "/error",
             "/legal/**",
+            "/mob/legal/**",
             "/support",
             "/support/**",
+            "/mob/support",
+            "/mob/support/**",
             "/local-upload/**",
 
-            "/user/**",
+            "/user/signup",
+            "/user/verify-email",
+            "/user/verify-email/check",
+            "/user/login",
+            "/user/login/refresh",
+            "/user/reset-password",
 //            "/test/**",
 
             "/webchatws/**"

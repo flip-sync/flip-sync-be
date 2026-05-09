@@ -9,9 +9,5 @@ data class UserUpdateProfileReqDto(
     @Schema(description = "이름", example = "장경태")
     @field:NotBlank
     @field:Size(max = 30)
-    val name: String,
-
-    @Schema(description = "소속", example = "FlipSync")
-    @field:Size(max = 100)
-    val organization: String? = null
+    val name: String
 )
