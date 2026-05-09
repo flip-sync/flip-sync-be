@@ -46,7 +46,7 @@ http_code() {
 extract_proxy_port() {
   local file=$1
   awk '
-    /location[[:space:]]+\^~[[:space:]]+\/mob\// { in_mob=1 }
+    /location/ && /\/mob\// { in_mob=1 }
     in_mob && /proxy_pass[[:space:]]+http:\/\/127\.0\.0\.1:[0-9]+\/?;/ {
       line=$0
       sub(/^.*127\.0\.0\.1:/, "", line)
@@ -64,7 +64,7 @@ replace_proxy_port() {
   local target_port=$3
   local tmp_file="${file}.tmp.$$"
   awk -v current_port="$current_port" -v target_port="$target_port" '
-    /location[[:space:]]+\^~[[:space:]]+\/mob\// { in_mob=1 }
+    /location/ && /\/mob\// { in_mob=1 }
     in_mob && $0 ~ "proxy_pass[[:space:]]+http://127\\.0\\.0\\.1:" current_port "(/)?;" {
       sub("127\\.0\\.0\\.1:" current_port, "127.0.0.1:" target_port)
     }
