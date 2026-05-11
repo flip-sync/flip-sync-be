@@ -19,7 +19,7 @@ data class GroupCreateReqDto(
     @field:Max(10)
     val maxMemberCount: Int,
 
-    @Schema(description = "비밀방 비밀번호 8자리", example = "12345678")
-    @field:Pattern(regexp = "^\\d{8}$|^$", message = "비밀번호는 숫자 8자리여야 합니다.")
+    @Schema(description = "비밀방 비밀번호 4자리", example = "1234")
+    @field:Pattern(regexp = "^\\d{4}$|^$", message = "비밀번호는 숫자 4자리여야 합니다.")
     val password: String? = null
 )

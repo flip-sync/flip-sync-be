@@ -9,6 +9,6 @@ data class GroupJoinReqDto(
     @field:NotNull
     val groupId: Long,
 
-    @Schema(description = "비밀방 비밀번호 8자리", example = "12345678")
+    @Schema(description = "비밀방 비밀번호 4자리", example = "1234")
     val password: String? = null
 )
