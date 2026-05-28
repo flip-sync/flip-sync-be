@@ -13,6 +13,8 @@ env:
   GREEN_PORT: 38122
   INNER_PORT: 8080
   TIME_DELATE: 300
+  HEALTH_CHECK_PATH: ready
+  IMAGE_TAG: ${{ github.run_number }}
 
 
 jobs:
@@ -52,14 +54,14 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ./${{ env.SERVICE_NAME }}
 
-          docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ github.run_number }}
+          docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_TAG }}
           docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
 
-          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ github.run_number }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_TAG }}
           docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
 
           docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:local
-          docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ github.run_number }}
+          docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:${{ env.IMAGE_TAG }}
           docker image rm ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest
         shell: bash
 
@@ -111,5 +113,5 @@ jobs:
           
           # deploy.sh 실행
           echo "[runtime] before deploy exec"
-          ssh -T -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "set -e; sudo bash -x $PROJECT_DIR/deploy.sh ${{ env.SERVICE_NAME }} $PROJECT_DIR '${{ env.BLUE_PORT }}' '${{ env.GREEN_PORT }}' '${{ env.INNER_PORT }}' '${{ env.TIME_DELATE }}' '${{ secrets.DOCKER_USERNAME }}' '${{ secrets.DOCKER_TOKEN }}' '${{ secrets.NGINX_DOMAIN }}' ''"
+          ssh -T -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "set -e; sudo bash -x $PROJECT_DIR/deploy.sh ${{ env.SERVICE_NAME }} $PROJECT_DIR '${{ env.BLUE_PORT }}' '${{ env.GREEN_PORT }}' '${{ env.INNER_PORT }}' '${{ env.TIME_DELATE }}' '${{ secrets.DOCKER_USERNAME }}' '${{ secrets.DOCKER_TOKEN }}' '${{ secrets.NGINX_DOMAIN }}' '${{ env.HEALTH_CHECK_PATH }}' '${{ env.IMAGE_TAG }}'"
         shell: bash

@@ -49,6 +49,10 @@ class WebSecurityConfig(
             "/api-docs/**",
 
             "/",
+            "/health",
+            "/ready",
+            "/mob/health",
+            "/mob/ready",
             "/error",
             "/invite/**",
             "/mob/invite/**",

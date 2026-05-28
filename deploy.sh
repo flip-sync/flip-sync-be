@@ -11,10 +11,13 @@ DOWN_DELTA_TIME=${6:-}
 DOCKER_HUB_USERNAME=${7:-}
 TOKEN=${8:-}
 NGINX_DOMAIN=${9:-}
-HEALTH_CHECK_PATH=${10:-api-docs}
+HEALTH_CHECK_PATH=${10:-ready}
+IMAGE_TAG=${11:-latest}
+EXTERNAL_HEALTH_URL=${12:-${EXTERNAL_HEALTH_URL:-}}
 
 NAMESPACE=$DOCKER_HUB_USERNAME
 IMAGE_REPO="${NAMESPACE}/${REPO_NAME}"
+TARGET_IMAGE="${IMAGE_REPO}:${IMAGE_TAG}"
 COMPOSE_FILE="${DIR_PROJECT}/docker-compose.yml"
 NGINX_FILE="/etc/nginx/sites-available/${NGINX_DOMAIN}"
 MOB_NGINX_FALLBACK_FILE="/etc/nginx/sites-available/smr-signal-deck.conf"
@@ -33,6 +36,14 @@ require_value() {
   fi
 }
 
+require_command() {
+  local cmd=$1
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Missing required command: ${cmd}"
+    exit 1
+  fi
+}
+
 http_code() {
   local port=$1
   local status
@@ -41,6 +52,25 @@ http_code() {
     status="000"
   fi
   echo "$status"
+}
+
+external_http_code() {
+  local status
+  if [ -z "$EXTERNAL_HEALTH_URL" ]; then
+    echo "SKIP"
+    return 0
+  fi
+
+  status=$(curl --location --write-out '%{http_code}' --silent --output /dev/null "$EXTERNAL_HEALTH_URL" || true)
+  if [ -z "$status" ]; then
+    status="000"
+  fi
+  echo "$status"
+}
+
+has_mob_location() {
+  local file=$1
+  grep -Eq '^[[:space:]]*location[[:space:]]+([^[:space:]]+[[:space:]]+)?/mob/?' "$file"
 }
 
 extract_proxy_port() {
@@ -75,17 +105,42 @@ replace_proxy_port() {
 resolve_nginx_file() {
   local configured_file=$1
 
-  if [ -f "$configured_file" ] && grep -q 'location[[:space:]]\+\^~[[:space:]]\+/mob/' "$configured_file"; then
+  if [ -f "$configured_file" ] && has_mob_location "$configured_file"; then
     echo "$configured_file"
     return
   fi
 
-  if [ -f "$MOB_NGINX_FALLBACK_FILE" ] && grep -q 'location[[:space:]]\+\^~[[:space:]]\+/mob/' "$MOB_NGINX_FALLBACK_FILE"; then
+  if [ -f "$MOB_NGINX_FALLBACK_FILE" ] && has_mob_location "$MOB_NGINX_FALLBACK_FILE"; then
     echo "$MOB_NGINX_FALLBACK_FILE"
     return
   fi
 
   echo "$configured_file"
+}
+
+rollback_nginx_file() {
+  local backup_file=$1
+  if [ -f "$backup_file" ]; then
+    echo "Rolling back Nginx config from backup: $backup_file"
+    cp -p "$backup_file" "$NGINX_FILE"
+  fi
+}
+
+reload_nginx_or_rollback() {
+  local backup_file=$1
+  local output
+
+  if ! output=$(sudo nginx -t 2>&1); then
+    echo "Nginx configuration test failed"
+    echo "$output"
+    rollback_nginx_file "$backup_file"
+    echo "Nginx configuration restored from backup. Re-testing restored config."
+    sudo nginx -t || true
+    return 1
+  fi
+
+  echo "$output"
+  sudo nginx -s reload
 }
 
 find_live_image() {
@@ -112,6 +167,9 @@ log_target_diagnostics() {
 }
 
 HEALTH_CHECK_PATH=${HEALTH_CHECK_PATH#/}
+if [ -z "$EXTERNAL_HEALTH_URL" ] && [[ "$NGINX_DOMAIN" == *.* ]] && [[ "$NGINX_DOMAIN" != *.conf ]]; then
+  EXTERNAL_HEALTH_URL="https://${NGINX_DOMAIN}/mob/${HEALTH_CHECK_PATH}"
+fi
 
 log_section "deploy args"
 echo "\$1 REPO_NAME=$REPO_NAME"
@@ -124,6 +182,8 @@ echo "\$7 DOCKER_HUB_USERNAME=$DOCKER_HUB_USERNAME"
 echo "\$8 TOKEN_LENGTH=${#TOKEN}"
 echo "\$9 NGINX_DOMAIN=$NGINX_DOMAIN"
 echo "\$10 HEALTH_CHECK_PATH=$HEALTH_CHECK_PATH"
+echo "\$11 IMAGE_TAG=$IMAGE_TAG"
+echo "\$12 EXTERNAL_HEALTH_URL=${EXTERNAL_HEALTH_URL:-SKIP}"
 
 require_value "REPO_NAME" "$REPO_NAME"
 require_value "DIR_PROJECT" "$DIR_PROJECT"
@@ -136,6 +196,22 @@ require_value "TOKEN" "$TOKEN"
 require_value "NGINX_DOMAIN" "$NGINX_DOMAIN"
 
 mkdir -p "${DIR_PROJECT}/logs" "${DIR_PROJECT}/sh"
+
+log_section "preflight"
+require_command docker
+require_command docker-compose
+require_command curl
+require_command awk
+require_command grep
+require_command sed
+require_command cp
+require_command mv
+require_command sudo
+if ! sudo -n true >/dev/null 2>&1; then
+  echo "Passwordless sudo is required for deployment"
+  exit 1
+fi
+echo "preflight ok"
 
 log_section "stop previous background job"
 echo "실행중인 백그라운드 종료"
@@ -178,14 +254,19 @@ echo "===================="
 log_section "port check"
 # sites-available/$NGINX_DOMAIN 파일을 생성해 놔야함
 # 포트 번호 추출
-if [ ! -f "$NGINX_FILE" ]; then
-    echo "Nginx file not found: $NGINX_FILE"
-    exit 1
-fi
 RESOLVED_NGINX_FILE=$(resolve_nginx_file "$NGINX_FILE")
 if [ "$RESOLVED_NGINX_FILE" != "$NGINX_FILE" ]; then
   echo "Using mob nginx file: $RESOLVED_NGINX_FILE"
   NGINX_FILE="$RESOLVED_NGINX_FILE"
+fi
+if [ ! -f "$NGINX_FILE" ]; then
+    echo "Nginx file not found: $NGINX_FILE"
+    echo "Checked configured file and fallback file: $MOB_NGINX_FALLBACK_FILE"
+    exit 1
+fi
+if ! has_mob_location "$NGINX_FILE"; then
+    echo "Nginx /mob location not found in: $NGINX_FILE"
+    exit 1
 fi
 echo "proxy_pass lines in $NGINX_FILE"
 grep -n 'proxy_pass' "$NGINX_FILE" || true
@@ -239,11 +320,12 @@ echo "LIVE_IMAGE=$LIVE_IMAGE"
 log_section "create docker compose"
 
 : # live image is resolved from the running container or Docker Hub tag list
+echo "TARGET_IMAGE=$TARGET_IMAGE"
 
 cat << EOF > "$COMPOSE_FILE"
 services:
   ${TARGET_COLOR}:
-    image: ${IMAGE_REPO}:latest
+    image: ${TARGET_IMAGE}
     container_name: ${REPO_NAME}-${TARGET_COLOR}
     ports:
       - "${TARGET_PORT}:${INNER_PORT}"
@@ -347,27 +429,44 @@ echo "===================="
 echo "===================="
 log_section "nginx check"
 current_port=$(extract_proxy_port "$NGINX_FILE" || true)
+NGINX_BACKUP_FILE=""
 
 if [ "$current_port" = "$NGINX_TARGET_PORT" ]; then
 echo "Nginx already points to port $current_port"
 else
+if [ -z "$current_port" ]; then
+  echo "Failed to extract current port from $NGINX_FILE"
+  exit 1
+fi
+NGINX_BACKUP_FILE="${NGINX_FILE}.bak.$(date +%Y%m%d%H%M%S)"
+cp -p "$NGINX_FILE" "$NGINX_BACKUP_FILE"
+echo "Nginx config backup created: $NGINX_BACKUP_FILE"
 replace_proxy_port "$NGINX_FILE" "$current_port" "$NGINX_TARGET_PORT"
-# Nginx 설정 검사
-output=$(sudo nginx -t 2>&1)
-
-# "success" 문구가 있는지 확인
-output=$(sudo nginx -t 2>&1)
-if [[ $output == *"test is successful"* ]]; then
-  sudo nginx -s reload
-  # 설정이 올바르면 Nginx를 리로드
-  sudo nginx -s reload
-else
-  # 설정에 문제가 있으면 에러 메시지 출력
-  echo "Nginx configuration test failed"
-  echo "$output"
+if ! reload_nginx_or_rollback "$NGINX_BACKUP_FILE"; then
   exit 1
 fi
 
+fi
+
+if [ "$IS_SUCCESS" -eq 0 ]; then
+  EXTERNAL_STATUS=$(external_http_code)
+  if [ "$EXTERNAL_STATUS" = "SKIP" ]; then
+    echo "External health check skipped"
+  else
+    echo "External health check $EXTERNAL_HEALTH_URL => $EXTERNAL_STATUS"
+    if [ "$EXTERNAL_STATUS" != "200" ]; then
+      echo "External health check failed. Rolling back Nginx to live port $LIVE_PORT"
+      if [ -n "$NGINX_BACKUP_FILE" ]; then
+        rollback_nginx_file "$NGINX_BACKUP_FILE"
+      else
+        replace_proxy_port "$NGINX_FILE" "$NGINX_TARGET_PORT" "$LIVE_PORT"
+      fi
+      sudo nginx -t
+      sudo nginx -s reload
+      NGINX_TARGET_PORT=$LIVE_PORT
+      IS_SUCCESS=1
+    fi
+  fi
 fi
 echo "===================="
 
