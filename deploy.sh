@@ -22,6 +22,8 @@ TARGET_IMAGE="${IMAGE_REPO}:${IMAGE_TAG}"
 COMPOSE_FILE="${DIR_PROJECT}/docker-compose.yml"
 NGINX_FILE="/etc/nginx/sites-available/${NGINX_DOMAIN}"
 MOB_NGINX_FALLBACK_FILE="/etc/nginx/sites-available/smr-signal-deck.conf"
+MOB_NGINX_INCLUDE_FILE="/etc/nginx/sites-available/smr-signal-deck-mob.inc"
+MOB_NGINX_PARENT_FILE="/etc/nginx/sites-available/smr-signal-deck.conf"
 
 log_section() {
   echo "===================="
@@ -125,6 +127,59 @@ rollback_nginx_file() {
     echo "Rolling back Nginx config from backup: $backup_file"
     cp -p "$backup_file" "$NGINX_FILE"
   fi
+}
+
+ensure_mob_include_loaded() {
+  local include_file=$1
+  local backup_file
+  local tmp_file
+
+  if [ "$include_file" != "$MOB_NGINX_INCLUDE_FILE" ]; then
+    return 0
+  fi
+
+  if [ ! -f "$MOB_NGINX_PARENT_FILE" ]; then
+    echo "Mob include parent file not found, skipping include check: $MOB_NGINX_PARENT_FILE"
+    return 0
+  fi
+
+  if grep -Fq "include ${include_file};" "$MOB_NGINX_PARENT_FILE"; then
+    echo "Mob include already loaded by parent Nginx file"
+    return 0
+  fi
+
+  backup_file="${MOB_NGINX_PARENT_FILE}.bak.$(date +%Y%m%d%H%M%S)"
+  tmp_file="${MOB_NGINX_PARENT_FILE}.tmp.$$"
+  cp -p "$MOB_NGINX_PARENT_FILE" "$backup_file"
+  echo "Mob include missing from parent file. Backup created: $backup_file"
+
+  awk -v include_line="    include ${include_file};" '
+    BEGIN { inserted = 0 }
+    /^[[:space:]]*location[[:space:]]*=[[:space:]]*\/api\/analyze/ && inserted == 0 {
+      print include_line
+      print ""
+      inserted = 1
+    }
+    { print }
+    END {
+      if (inserted == 0) {
+        exit 2
+      }
+    }
+  ' "$MOB_NGINX_PARENT_FILE" > "$tmp_file" || {
+    echo "Failed to insert mob include into parent Nginx file"
+    rm -f "$tmp_file"
+    return 1
+  }
+
+  mv "$tmp_file" "$MOB_NGINX_PARENT_FILE"
+  if ! sudo nginx -t; then
+    rollback_nginx_file "$backup_file"
+    sudo nginx -t || true
+    return 1
+  fi
+
+  sudo nginx -s reload
 }
 
 reload_nginx_or_rollback() {
@@ -270,6 +325,7 @@ if ! has_mob_location "$NGINX_FILE"; then
     echo "Nginx /mob location not found in: $NGINX_FILE"
     exit 1
 fi
+ensure_mob_include_loaded "$NGINX_FILE"
 echo "proxy_pass lines in $NGINX_FILE"
 grep -n 'proxy_pass' "$NGINX_FILE" || true
 NOW_PORT=$(extract_proxy_port "$NGINX_FILE" || true)
