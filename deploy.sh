@@ -14,6 +14,7 @@ NGINX_DOMAIN=${9:-}
 HEALTH_CHECK_PATH=${10:-ready}
 IMAGE_TAG=${11:-latest}
 EXTERNAL_HEALTH_URL=${12:-${EXTERNAL_HEALTH_URL:-}}
+REQUIRE_EXTERNAL_HEALTH=${13:-false}
 
 NAMESPACE=$DOCKER_HUB_USERNAME
 IMAGE_REPO="${NAMESPACE}/${REPO_NAME}"
@@ -184,6 +185,7 @@ echo "\$9 NGINX_DOMAIN=$NGINX_DOMAIN"
 echo "\$10 HEALTH_CHECK_PATH=$HEALTH_CHECK_PATH"
 echo "\$11 IMAGE_TAG=$IMAGE_TAG"
 echo "\$12 EXTERNAL_HEALTH_URL=${EXTERNAL_HEALTH_URL:-SKIP}"
+echo "\$13 REQUIRE_EXTERNAL_HEALTH=$REQUIRE_EXTERNAL_HEALTH"
 
 require_value "REPO_NAME" "$REPO_NAME"
 require_value "DIR_PROJECT" "$DIR_PROJECT"
@@ -455,16 +457,20 @@ if [ "$IS_SUCCESS" -eq 0 ]; then
   else
     echo "External health check $EXTERNAL_HEALTH_URL => $EXTERNAL_STATUS"
     if [ "$EXTERNAL_STATUS" != "200" ]; then
-      echo "External health check failed. Rolling back Nginx to live port $LIVE_PORT"
-      if [ -n "$NGINX_BACKUP_FILE" ]; then
-        rollback_nginx_file "$NGINX_BACKUP_FILE"
+      if [ "$REQUIRE_EXTERNAL_HEALTH" = "true" ]; then
+        echo "External health check failed. Rolling back Nginx to live port $LIVE_PORT"
+        if [ -n "$NGINX_BACKUP_FILE" ]; then
+          rollback_nginx_file "$NGINX_BACKUP_FILE"
+        else
+          replace_proxy_port "$NGINX_FILE" "$NGINX_TARGET_PORT" "$LIVE_PORT"
+        fi
+        sudo nginx -t
+        sudo nginx -s reload
+        NGINX_TARGET_PORT=$LIVE_PORT
+        IS_SUCCESS=1
       else
-        replace_proxy_port "$NGINX_FILE" "$NGINX_TARGET_PORT" "$LIVE_PORT"
+        echo "External health check failed, but REQUIRE_EXTERNAL_HEALTH=false. Keeping target and leaving external smoke test to the runner/operator."
       fi
-      sudo nginx -t
-      sudo nginx -s reload
-      NGINX_TARGET_PORT=$LIVE_PORT
-      IS_SUCCESS=1
     fi
   fi
 fi

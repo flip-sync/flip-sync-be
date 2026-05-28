@@ -79,6 +79,8 @@ curl -i http://127.0.0.1:38122/ready
 
 ## 5. 외부 URL 확인
 
+`deploy.sh` 내부의 외부 URL 확인은 서버가 자기 public domain을 다시 호출할 수 없는 환경을 고려해 기본 경고로 처리한다. 실제 외부 URL 최종 판정은 배포가 끝난 뒤 runner 또는 운영자 환경에서 확인한다.
+
 배포 후 외부에서 확인할 URL:
 
 ```text
@@ -142,4 +144,3 @@ sudo docker logs --tail 200 flip-sync-server-green
 | 외부 `/mob/ready` 200 확인 |  |
 | 실패 시 기존 live port 유지 |  |
 | Nginx 설정 실패 시 백업 rollback |  |
-
