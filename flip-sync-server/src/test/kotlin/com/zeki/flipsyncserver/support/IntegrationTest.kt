@@ -4,7 +4,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 
-@SpringBootTest
+@SpringBootTest(
+    properties = [
+        "flipsync.local-upload.enabled=true",
+        "flipsync.local-upload.base-url=http://localhost:8080"
+    ]
+)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 abstract class IntegrationTest
