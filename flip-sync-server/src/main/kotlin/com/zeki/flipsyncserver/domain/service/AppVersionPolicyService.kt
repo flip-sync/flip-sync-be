@@ -99,8 +99,9 @@ class AppVersionPolicyService(
 
     private fun normalizePlatform(platform: String): String {
         return when (platform.trim().lowercase()) {
+            "android" -> "android"
             "ios" -> "ios"
-            else -> "android"
+            else -> throw ApiException(ResponseCode.BAD_REQUEST, "Unsupported platform.")
         }
     }
 

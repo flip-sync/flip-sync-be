@@ -41,6 +41,8 @@ class S3Service(
     }
 
     fun createUrl(file: MultipartFile, path: String): String {
+        validateImageFile(file)
+
         if (localUploadEnabled) {
             return createLocalUrl(file, path)
         }
@@ -69,11 +71,6 @@ class S3Service(
 
         try {
             multipartFile.inputStream.use { inputStream ->
-                // 파일 유효성 검사
-                val tika = Tika()
-                val detectedFile = tika.detect(multipartFile.bytes)
-                require(detectedFile.startsWith("image")) { "AwsS3 : 올바른 이미지 파일을 올려주세요." }
-
                 // 업로드
                 amazonS3Client.putObject(
                     PutObjectRequest(bucket, fileName, inputStream, objectMetadata)
@@ -82,6 +79,18 @@ class S3Service(
             }
         } catch (e: IOException) {
             throw ApiException(ResponseCode.S3_UPLOAD_FAILED)
+        }
+    }
+
+    private fun validateImageFile(file: MultipartFile) {
+        val detectedFile = try {
+            Tika().detect(file.bytes)
+        } catch (exception: IOException) {
+            throw ApiException(ResponseCode.S3_UPLOAD_FAILED)
+        }
+
+        if (!detectedFile.startsWith("image")) {
+            throw ApiException(ResponseCode.BAD_REQUEST, "올바른 이미지 파일을 올려주세요.")
         }
     }
 

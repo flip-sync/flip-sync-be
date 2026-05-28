@@ -100,7 +100,7 @@ class UserService(
         )
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = [ApiException::class])
     fun checkVerifyEmail(reqDto: UserVerifyEmailReqDto) {
         val emailVerify = emailVerifyRepository.findByEmail(reqDto.email)
         if (emailVerify == null) throw ApiException(ResponseCode.EMAIL_VERIFY_NOT_FOUND)

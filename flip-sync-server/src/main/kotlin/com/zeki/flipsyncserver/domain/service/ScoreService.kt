@@ -142,13 +142,15 @@ class ScoreService(
             code = scoreEntity.code,
             uploadedUserId = scoreEntity.uploadedUserId,
             uploadedUserName = uploadedUser.name,
-            scoreImageList = scoreEntity.scoreImageList.map {
-                ScoreGetDetailResDto.ScoreImageResDto(
-                    id = it.id!!,
-                    url = it.url,
-                    order = it.order
-                )
-            }
+            scoreImageList = scoreEntity.scoreImageList
+                .sortedBy { it.order }
+                .map {
+                    ScoreGetDetailResDto.ScoreImageResDto(
+                        id = it.id!!,
+                        url = it.url,
+                        order = it.order
+                    )
+                }
         )
     }
 }
