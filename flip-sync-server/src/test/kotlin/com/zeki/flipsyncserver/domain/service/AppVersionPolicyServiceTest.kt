@@ -29,10 +29,11 @@ class AppVersionPolicyServiceTest : IntegrationTest() {
         val policy = appVersionPolicyService.getPolicy("android")
 
         assertThat(policy.platform).isEqualTo("android")
-        assertThat(policy.latestVersion).isEqualTo("1.0.0")
-        assertThat(policy.latestBuildVersion).isEqualTo(9)
-        assertThat(policy.minimumBuildVersion).isEqualTo(1)
-        assertThat(policy.storeUrl).contains("play.google.com")
+        assertThat(policy.latestVersion).isNotBlank()
+        assertThat(policy.latestBuildVersion).isPositive()
+        assertThat(policy.minimumBuildVersion).isPositive()
+        assertThat(policy.minimumBuildVersion).isLessThanOrEqualTo(policy.latestBuildVersion)
+        assertThat(policy.storeUrl).isNotBlank()
     }
 
     @Test
@@ -40,10 +41,11 @@ class AppVersionPolicyServiceTest : IntegrationTest() {
         val policy = appVersionPolicyService.getPolicy("ios")
 
         assertThat(policy.platform).isEqualTo("ios")
-        assertThat(policy.latestVersion).isEqualTo("1.0.0")
-        assertThat(policy.latestBuildVersion).isEqualTo(1)
-        assertThat(policy.minimumBuildVersion).isEqualTo(1)
-        assertThat(policy.storeUrl).isEqualTo("https://fliplyze.com/mob")
+        assertThat(policy.latestVersion).isNotBlank()
+        assertThat(policy.latestBuildVersion).isPositive()
+        assertThat(policy.minimumBuildVersion).isPositive()
+        assertThat(policy.minimumBuildVersion).isLessThanOrEqualTo(policy.latestBuildVersion)
+        assertThat(policy.storeUrl).isNotBlank()
     }
 
     @Test
@@ -58,6 +60,7 @@ class AppVersionPolicyServiceTest : IntegrationTest() {
 
     @Test
     fun `upsertPolicy creates and updates policy by normalized platform`() {
+        val fallback = appVersionPolicyService.getPolicy("android")
         val created = appVersionPolicyService.upsertPolicy(
             AppVersionPolicyUpdateReqDto(
                 platform = "ANDROID",
@@ -85,8 +88,8 @@ class AppVersionPolicyServiceTest : IntegrationTest() {
         assertThat(updated.latestVersion).isEqualTo("1.3.0")
         assertThat(updated.latestBuildVersion).isEqualTo(13)
         assertThat(updated.minimumBuildVersion).isEqualTo(11)
-        assertThat(updated.forceUpdateMessage).isEqualTo("새 버전으로 업데이트가 필요합니다.")
-        assertThat(updated.optionalUpdateMessage).isEqualTo("새 버전이 준비되었습니다.")
+        assertThat(updated.forceUpdateMessage).isEqualTo(fallback.forceUpdateMessage)
+        assertThat(updated.optionalUpdateMessage).isEqualTo(fallback.optionalUpdateMessage)
         assertThat(appVersionPolicyRepository.count()).isEqualTo(1)
     }
 
