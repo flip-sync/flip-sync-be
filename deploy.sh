@@ -25,7 +25,7 @@ MOB_NGINX_FALLBACK_FILE="/etc/nginx/sites-available/smr-signal-deck.conf"
 MOB_NGINX_INCLUDE_FILE="/etc/nginx/sites-available/smr-signal-deck-mob.inc"
 MOB_NGINX_PARENT_FILE="/etc/nginx/sites-available/smr-signal-deck.conf"
 ASSETLINKS_SOURCE="${DIR_PROJECT}/assetlinks.json"
-ASSETLINKS_TARGET="${DIR_PROJECT}/public/.well-known/assetlinks.json"
+ASSETLINKS_TARGET="/var/www/flipsync/.well-known/assetlinks.json"
 
 log_section() {
   echo "===================="
@@ -190,9 +190,10 @@ install_assetlinks_file() {
     return 0
   fi
 
-  mkdir -p "$(dirname "$ASSETLINKS_TARGET")"
-  cp "$ASSETLINKS_SOURCE" "$ASSETLINKS_TARGET"
-  chmod 644 "$ASSETLINKS_TARGET"
+  sudo mkdir -p "$(dirname "$ASSETLINKS_TARGET")"
+  sudo cp "$ASSETLINKS_SOURCE" "$ASSETLINKS_TARGET"
+  sudo chmod 755 /var/www /var/www/flipsync "$(dirname "$ASSETLINKS_TARGET")"
+  sudo chmod 644 "$ASSETLINKS_TARGET"
   echo "Installed assetlinks.json: $ASSETLINKS_TARGET"
 }
 
@@ -203,15 +204,47 @@ ensure_assetlinks_nginx_location() {
   local tmp_file
   local block
 
-  if grep -Eq 'location[[:space:]]*=[[:space:]]*/\.well-known/assetlinks\.json' "$nginx_file"; then
-    echo "Nginx assetlinks location already exists in $nginx_file"
-    return 0
-  fi
-
   backup_file="${nginx_file}.assetlinks.bak.$(date +%Y%m%d%H%M%S)"
   tmp_file="${nginx_file}.assetlinks.tmp.$$"
   cp -p "$nginx_file" "$backup_file"
   echo "Nginx assetlinks backup created: $backup_file"
+
+  if grep -Eq 'location[[:space:]]*=[[:space:]]*/\.well-known/assetlinks\.json' "$nginx_file"; then
+    awk -v assetlinks_target="$assetlinks_target" '
+      /^[[:space:]]*location[[:space:]]*=[[:space:]]*\/\.well-known\/assetlinks\.json[[:space:]]*\{/ {
+        in_assetlinks = 1
+        alias_seen = 0
+        print
+        next
+      }
+      in_assetlinks && /^[[:space:]]*alias[[:space:]]+/ {
+        print "        alias " assetlinks_target ";"
+        alias_seen = 1
+        next
+      }
+      in_assetlinks && /^[[:space:]]*\}/ {
+        if (alias_seen == 0) {
+          print "        alias " assetlinks_target ";"
+        }
+        in_assetlinks = 0
+        print
+        next
+      }
+      { print }
+    ' "$nginx_file" > "$tmp_file"
+
+    mv "$tmp_file" "$nginx_file"
+    if ! sudo nginx -t; then
+      echo "Assetlinks Nginx configuration update failed. Rolling back."
+      cp -p "$backup_file" "$nginx_file"
+      sudo nginx -t || true
+      return 1
+    fi
+
+    sudo nginx -s reload
+    echo "Nginx assetlinks location updated for /.well-known/assetlinks.json"
+    return 0
+  fi
 
   block=$(cat <<EOF
     location = /.well-known/assetlinks.json {
