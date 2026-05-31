@@ -22,6 +22,7 @@ dependencies {
     // db
     runtimeOnly("com.mysql:mysql-connector-j")
     testRuntimeOnly("com.h2database:h2")
+    api("org.springframework.boot:spring-boot-starter-data-redis")
     // logback & webclient
     api("io.netty:netty-all") // mac
     api("io.micrometer:micrometer-core") // mac

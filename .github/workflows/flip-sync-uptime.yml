@@ -1,0 +1,37 @@
+name: flip-sync uptime monitor
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Check public readiness endpoint
+        run: |
+          set -euo pipefail
+
+          READY_URL="https://fliplyze.com/mob/ready"
+          HEALTH_URL="https://fliplyze.com/mob/health"
+
+          check_url() {
+            local url="$1"
+            local status
+            status=$(curl --location --silent --show-error --output /tmp/uptime-response.json --write-out "%{http_code}" "$url")
+
+            echo "$url => $status"
+            cat /tmp/uptime-response.json || true
+            echo
+
+            if [ "$status" != "200" ]; then
+              echo "Uptime check failed for $url"
+              exit 1
+            fi
+          }
+
+          check_url "$READY_URL"
+          check_url "$HEALTH_URL"

@@ -667,6 +667,14 @@ class PublicPageController {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>FlipSync 방 초대</title>
+            <meta name="description" content="FlipSync 악보 공유방 초대 링크입니다. 입장하기를 눌러 앱에서 공유방으로 이동하세요.">
+            <meta property="og:type" content="website">
+            <meta property="og:title" content="FlipSync 악보 공유방 초대">
+            <meta property="og:description" content="입장하기를 눌러 FlipSync 앱에서 초대된 악보 공유방으로 이동하세요.">
+            <meta property="og:url" content="https://fliplyze.com/mob/invite/$groupId">
+            <meta name="twitter:card" content="summary">
+            <meta name="twitter:title" content="FlipSync 악보 공유방 초대">
+            <meta name="twitter:description" content="입장하기를 눌러 FlipSync 앱에서 초대된 악보 공유방으로 이동하세요.">
             <style>
                 :root {
                     color-scheme: light;
@@ -763,6 +771,14 @@ class PublicPageController {
                     margin-top: 14px;
                     font-size: 13px;
                 }
+                .install-link {
+                    display: inline-flex;
+                    margin-top: 12px;
+                    color: var(--primary-dark);
+                    font-size: 13px;
+                    font-weight: 800;
+                    text-decoration: none;
+                }
             </style>
         </head>
         <body>
@@ -776,6 +792,7 @@ class PublicPageController {
                 </div>
                 <a class="button" href="flipsync:///invite/$groupId">입장하기</a>
                 <p class="hint">앱이 열리지 않으면 FlipSync 설치 여부를 확인해 주세요.</p>
+                <a class="install-link" href="https://play.google.com/store/apps/details?id=com.fliplyze.flipsync">앱 설치 페이지로 이동</a>
             </main>
         </body>
         </html>

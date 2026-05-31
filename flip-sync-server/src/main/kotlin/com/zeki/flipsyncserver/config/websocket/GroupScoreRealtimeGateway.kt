@@ -1,6 +1,7 @@
 package com.zeki.flipsyncserver.config.websocket
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.TextMessage
@@ -29,6 +30,7 @@ private data class GroupRealtimeSocketState(
 )
 
 @Component
+@ConditionalOnProperty(prefix = "flipsync.realtime", name = ["mode"], havingValue = "in-memory", matchIfMissing = true)
 class InMemoryGroupScoreRealtimeGateway(
     private val objectMapper: ObjectMapper
 ) : GroupScoreRealtimeGateway {
@@ -162,15 +164,26 @@ class InMemoryGroupScoreRealtimeGateway(
     @Scheduled(fixedDelay = 60_000)
     fun cleanupStaleRooms() {
         val now = Instant.now()
+        val groupsToBroadcast = mutableListOf<Long>()
 
-        roomContexts.entries.removeIf { (_, context) ->
-            context.sessions.entries.removeIf { (_, socketState) ->
+        roomContexts.entries.removeIf { (groupId, context) ->
+            val removedStaleSessions = context.sessions.entries.removeIf { (_, socketState) ->
                 !socketState.session.isOpen ||
                     Duration.between(socketState.lastSeenAt, now) > STALE_SESSION_TIMEOUT
             }
 
-            context.sessions.isEmpty() &&
+            val shouldRemoveRoom = context.sessions.isEmpty() &&
                 Duration.between(context.lastActivityAt, now) > EMPTY_ROOM_RETENTION
+
+            if (removedStaleSessions && !shouldRemoveRoom && context.sessions.isNotEmpty()) {
+                groupsToBroadcast += groupId
+            }
+
+            shouldRemoveRoom
+        }
+
+        groupsToBroadcast.forEach { groupId ->
+            broadcastPresence(groupId)
         }
     }
 
