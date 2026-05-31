@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.fliplyze.flipsync",
+      "sha256_cert_fingerprints": [
+        "69:35:79:C5:7A:8F:5F:2D:9E:7F:B0:88:26:68:1C:84:23:CE:B4:17:64:40:E1:C5:15:12:0C:6F:C1:48:63:CA"
+      ]
+    }
+  }
+]

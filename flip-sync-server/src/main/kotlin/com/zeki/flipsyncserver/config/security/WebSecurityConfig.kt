@@ -54,6 +54,8 @@ class WebSecurityConfig(
             "/mob/health",
             "/mob/ready",
             "/error",
+            "/.well-known/assetlinks.json",
+            "/mob/.well-known/assetlinks.json",
             "/invite/**",
             "/mob/invite/**",
             "/legal/**",

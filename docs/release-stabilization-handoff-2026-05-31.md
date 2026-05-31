@@ -25,6 +25,7 @@ Backend release-candidate areas:
 - In-memory WebSocket stale-session cleanup and presence rebroadcast.
 - `X-Request-Id` filter and log tracing.
 - `/mob/invite/:id` preview/fallback improvements.
+- Android App Links verification file at repository-root `assetlinks.json`, deployed to `/.well-known/assetlinks.json`.
 - GitHub Actions uptime workflow for `/mob/ready` and `/mob/health`.
 
 Backend checks before release:
@@ -41,10 +42,19 @@ Backend smoke after deploy:
 ```powershell
 curl.exe -i https://fliplyze.com/mob/ready
 curl.exe -i https://fliplyze.com/mob/health
+curl.exe -i https://fliplyze.com/.well-known/assetlinks.json
+curl.exe -I https://fliplyze.com/mob/invite
 curl.exe -I https://fliplyze.com/mob/invite/1
 curl.exe -I https://fliplyze.com/mob/legal/privacy-policy
 curl.exe -I https://fliplyze.com/mob/support
 ```
+
+Android App Links note:
+
+- The default `assetlinks.json` fingerprint is the EAS Android keystore SHA-256 for `com.fliplyze.flipsync`.
+- GitHub Actions copies repository-root `assetlinks.json` to the server, and `deploy.sh` installs it under the public `.well-known` path.
+- If Google Play App Signing shows a different SHA-256 under Play Console > App integrity > App signing certificate, set `FLIPSYNC_APP_LINKS_ANDROID_SHA256_CERT_FINGERPRINTS` to that value before backend deployment.
+- Multiple fingerprints can be provided as a comma-separated list.
 
 ## Mobile Companion State
 

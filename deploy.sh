@@ -24,6 +24,8 @@ NGINX_FILE="/etc/nginx/sites-available/${NGINX_DOMAIN}"
 MOB_NGINX_FALLBACK_FILE="/etc/nginx/sites-available/smr-signal-deck.conf"
 MOB_NGINX_INCLUDE_FILE="/etc/nginx/sites-available/smr-signal-deck-mob.inc"
 MOB_NGINX_PARENT_FILE="/etc/nginx/sites-available/smr-signal-deck.conf"
+ASSETLINKS_SOURCE="${DIR_PROJECT}/assetlinks.json"
+ASSETLINKS_TARGET="${DIR_PROJECT}/public/.well-known/assetlinks.json"
 
 log_section() {
   echo "===================="
@@ -182,6 +184,85 @@ ensure_mob_include_loaded() {
   sudo nginx -s reload
 }
 
+install_assetlinks_file() {
+  if [ ! -f "$ASSETLINKS_SOURCE" ]; then
+    echo "Asset links source file not found, skipping root assetlinks install: $ASSETLINKS_SOURCE"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$ASSETLINKS_TARGET")"
+  cp "$ASSETLINKS_SOURCE" "$ASSETLINKS_TARGET"
+  chmod 644 "$ASSETLINKS_TARGET"
+  echo "Installed assetlinks.json: $ASSETLINKS_TARGET"
+}
+
+ensure_assetlinks_nginx_location() {
+  local nginx_file=$1
+  local assetlinks_target=$2
+  local backup_file
+  local tmp_file
+  local block
+
+  if grep -Eq 'location[[:space:]]*=[[:space:]]*/\.well-known/assetlinks\.json' "$nginx_file"; then
+    echo "Nginx assetlinks location already exists in $nginx_file"
+    return 0
+  fi
+
+  backup_file="${nginx_file}.assetlinks.bak.$(date +%Y%m%d%H%M%S)"
+  tmp_file="${nginx_file}.assetlinks.tmp.$$"
+  cp -p "$nginx_file" "$backup_file"
+  echo "Nginx assetlinks backup created: $backup_file"
+
+  block=$(cat <<EOF
+    location = /.well-known/assetlinks.json {
+        default_type application/json;
+        add_header Cache-Control "public, max-age=300" always;
+        alias ${assetlinks_target};
+    }
+
+EOF
+)
+
+  if grep -Eq '^[[:space:]]*server[[:space:]]*\{' "$nginx_file"; then
+    awk -v block="$block" '
+      BEGIN { inserted = 0 }
+      {
+        print
+        if (inserted == 0 && $0 ~ /^[[:space:]]*server[[:space:]]*\{/) {
+          printf "%s", block
+          inserted = 1
+        }
+      }
+      END {
+        if (inserted == 0) {
+          exit 2
+        }
+      }
+    ' "$nginx_file" > "$tmp_file" || {
+      echo "Failed to insert assetlinks location into server block"
+      rm -f "$tmp_file"
+      cp -p "$backup_file" "$nginx_file"
+      return 1
+    }
+  else
+    {
+      printf "%s" "$block"
+      cat "$nginx_file"
+    } > "$tmp_file"
+  fi
+
+  mv "$tmp_file" "$nginx_file"
+  if ! sudo nginx -t; then
+    echo "Assetlinks Nginx configuration test failed. Rolling back."
+    cp -p "$backup_file" "$nginx_file"
+    sudo nginx -t || true
+    return 1
+  fi
+
+  sudo nginx -s reload
+  echo "Nginx assetlinks location installed for /.well-known/assetlinks.json"
+}
+
 reload_nginx_or_rollback() {
   local backup_file=$1
   local output
@@ -326,6 +407,8 @@ if ! has_mob_location "$NGINX_FILE"; then
     exit 1
 fi
 ensure_mob_include_loaded "$NGINX_FILE"
+install_assetlinks_file
+ensure_assetlinks_nginx_location "$NGINX_FILE" "$ASSETLINKS_TARGET"
 echo "proxy_pass lines in $NGINX_FILE"
 grep -n 'proxy_pass' "$NGINX_FILE" || true
 NOW_PORT=$(extract_proxy_port "$NGINX_FILE" || true)

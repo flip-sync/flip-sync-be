@@ -1,5 +1,6 @@
 package com.zeki.flipsyncserver.config
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -9,7 +10,24 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.ResponseBody
 
 @Controller
-class PublicPageController {
+class PublicPageController(
+    @Value("\${flipsync.app-links.android.package-name:com.fliplyze.flipsync}")
+    private val androidPackageName: String,
+    @Value("\${flipsync.app-links.android.sha256-cert-fingerprints:69:35:79:C5:7A:8F:5F:2D:9E:7F:B0:88:26:68:1C:84:23:CE:B4:17:64:40:E1:C5:15:12:0C:6F:C1:48:63:CA}")
+    private val androidSha256CertFingerprints: String
+) {
+
+    @GetMapping(
+        value = [
+            "/.well-known/assetlinks.json",
+            "/mob/.well-known/assetlinks.json"
+        ],
+        produces = [MediaType.APPLICATION_JSON_VALUE]
+    )
+    @ResponseBody
+    fun androidAssetLinks(): ResponseEntity<String> = ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(buildAndroidAssetLinksJson())
 
     @GetMapping(
         value = [
@@ -535,6 +553,20 @@ class PublicPageController {
         return htmlResponse(buildStableInviteHtml(groupId))
     }
 
+    @GetMapping(
+        value = [
+            "/invite",
+            "/invite/",
+            "/mob/invite",
+            "/mob/invite/"
+        ],
+        produces = [MediaType.TEXT_HTML_VALUE]
+    )
+    @ResponseBody
+    fun inviteIndex(): ResponseEntity<String> {
+        return htmlResponse(buildInviteIndexHtml())
+    }
+
     /*
         """
         <!DOCTYPE html>
@@ -798,6 +830,93 @@ class PublicPageController {
         </html>
         """.trimIndent()
 
+    private fun buildInviteIndexHtml(): String = """
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>FlipSync 초대 링크</title>
+            <meta name="description" content="FlipSync 초대 링크 안내 페이지입니다. 공유받은 전체 초대 링크를 다시 확인해 주세요.">
+            <style>
+                :root {
+                    color-scheme: light;
+                    --bg: #f4f8fb;
+                    --card: #ffffff;
+                    --text: #172033;
+                    --muted: #65708a;
+                    --line: #dce8f3;
+                    --primary: #2e9cd0;
+                    --primary-soft: #e8f8fd;
+                }
+                * { box-sizing: border-box; }
+                body {
+                    margin: 0;
+                    min-height: 100vh;
+                    font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+                    color: var(--text);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 28px 18px;
+                }
+                .card {
+                    width: min(100%, 420px);
+                    padding: 30px 24px 24px;
+                    border: 1px solid var(--line);
+                    border-radius: 24px;
+                    background: var(--card);
+                    box-shadow: 0 20px 60px rgba(34, 52, 93, 0.1);
+                    text-align: center;
+                }
+                .badge {
+                    display: inline-flex;
+                    padding: 7px 13px;
+                    border-radius: 999px;
+                    background: var(--primary-soft);
+                    color: var(--primary);
+                    font-size: 13px;
+                    font-weight: 800;
+                }
+                h1 {
+                    margin: 18px 0 10px;
+                    font-size: clamp(27px, 8vw, 36px);
+                    line-height: 1.2;
+                }
+                p {
+                    margin: 0;
+                    color: var(--muted);
+                    font-size: 15px;
+                    line-height: 1.7;
+                }
+                .store-link {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    min-height: 52px;
+                    margin-top: 22px;
+                    border-radius: 16px;
+                    background: var(--primary);
+                    color: #ffffff;
+                    font-size: 16px;
+                    font-weight: 900;
+                    text-decoration: none;
+                }
+            </style>
+        </head>
+        <body>
+            <main class="card">
+                <div class="badge">FlipSync 초대</div>
+                <h1>초대 링크를 확인해 주세요</h1>
+                <p>방 초대 링크에는 방 번호가 포함되어야 합니다. 공유받은 전체 링크를 다시 열거나 FlipSync 앱을 설치한 뒤 초대 링크를 다시 눌러 주세요.</p>
+                <a class="store-link" href="https://play.google.com/store/apps/details?id=com.fliplyze.flipsync">앱 설치 페이지로 이동</a>
+            </main>
+        </body>
+        </html>
+        """.trimIndent()
+
     private fun buildInviteHtml(groupId: Long): String = """
         <!DOCTYPE html>
         <html lang="ko">
@@ -918,6 +1037,35 @@ class PublicPageController {
         </body>
         </html>
         """.trimIndent()
+
+    private fun buildAndroidAssetLinksJson(): String {
+        val fingerprints = androidSha256CertFingerprints
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .joinToString(separator = ",\n") { "        \"${jsonEscape(it)}\"" }
+
+        return """
+            [
+              {
+                "relation": [
+                  "delegate_permission/common.handle_all_urls"
+                ],
+                "target": {
+                  "namespace": "android_app",
+                  "package_name": "${jsonEscape(androidPackageName)}",
+                  "sha256_cert_fingerprints": [
+$fingerprints
+                  ]
+                }
+              }
+            ]
+            """.trimIndent()
+    }
+
+    private fun jsonEscape(value: String): String = value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
 
     private fun htmlResponse(document: String): ResponseEntity<String> = ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_TYPE, "${MediaType.TEXT_HTML_VALUE};charset=UTF-8")

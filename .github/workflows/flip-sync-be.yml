@@ -98,6 +98,8 @@ jobs:
           # deploy.sh 파일 전송
           echo "[runtime] before scp deploy.sh"
           scp -o ConnectTimeout=5 ./deploy.sh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }}:$PROJECT_DIR
+          echo "[runtime] before scp assetlinks.json"
+          scp -o ConnectTimeout=5 ./assetlinks.json ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }}:$PROJECT_DIR/assetlinks.json
           
           # deploy.sh 진단
           echo "[runtime] before diag connected"
@@ -106,6 +108,8 @@ jobs:
           ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] project dir'; ls -ld $PROJECT_DIR"
           echo "[runtime] before diag deploy file"
           ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] deploy file'; ls -l $PROJECT_DIR/deploy.sh; sed -n '1,20p' $PROJECT_DIR/deploy.sh"
+          echo "[runtime] before diag assetlinks file"
+          ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] assetlinks file'; ls -l $PROJECT_DIR/assetlinks.json; sed -n '1,40p' $PROJECT_DIR/assetlinks.json"
           echo "[runtime] before diag sudo"
           ssh -o ConnectTimeout=5 ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "echo '[diag] sudo'; sudo -n -l"
           echo "[runtime] before diag bash-n"
