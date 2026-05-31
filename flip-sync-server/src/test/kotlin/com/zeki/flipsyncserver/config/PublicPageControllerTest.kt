@@ -22,9 +22,10 @@ class PublicPageControllerTest : IntegrationTest() {
             .andExpect(status().isOk)
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$[0].relation[0]").value("delegate_permission/common.handle_all_urls"))
+            .andExpect(jsonPath("$[0].relation[1]").value("delegate_permission/common.get_login_creds"))
             .andExpect(jsonPath("$[0].target.namespace").value("android_app"))
             .andExpect(jsonPath("$[0].target.package_name").value("com.fliplyze.flipsync"))
-            .andExpect(jsonPath("$[0].target.sha256_cert_fingerprints[0]").value("69:35:79:C5:7A:8F:5F:2D:9E:7F:B0:88:26:68:1C:84:23:CE:B4:17:64:40:E1:C5:15:12:0C:6F:C1:48:63:CA"))
+            .andExpect(jsonPath("$[0].target.sha256_cert_fingerprints[0]").value("17:C2:C5:B8:BC:D1:66:62:01:ED:24:34:7D:8A:37:2F:CD:7B:B4:72:91:7B:79:CD:6C:F8:48:3D:05:95:C8:4B"))
     }
 
     @Test

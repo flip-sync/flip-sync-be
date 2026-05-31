@@ -51,7 +51,7 @@ curl.exe -I https://fliplyze.com/mob/support
 
 Android App Links note:
 
-- The default `assetlinks.json` fingerprint is the EAS Android keystore SHA-256 for `com.fliplyze.flipsync`.
+- The default `assetlinks.json` fingerprint is the Google Play App Signing certificate SHA-256 for `com.fliplyze.flipsync`.
 - GitHub Actions copies repository-root `assetlinks.json` to the server, and `deploy.sh` installs it under the public `.well-known` path.
 - If Google Play App Signing shows a different SHA-256 under Play Console > App integrity > App signing certificate, set `FLIPSYNC_APP_LINKS_ANDROID_SHA256_CERT_FINGERPRINTS` to that value before backend deployment.
 - Multiple fingerprints can be provided as a comma-separated list.

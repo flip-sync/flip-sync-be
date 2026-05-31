@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 class PublicPageController(
     @Value("\${flipsync.app-links.android.package-name:com.fliplyze.flipsync}")
     private val androidPackageName: String,
-    @Value("\${flipsync.app-links.android.sha256-cert-fingerprints:69:35:79:C5:7A:8F:5F:2D:9E:7F:B0:88:26:68:1C:84:23:CE:B4:17:64:40:E1:C5:15:12:0C:6F:C1:48:63:CA}")
+    @Value("\${flipsync.app-links.android.sha256-cert-fingerprints:17:C2:C5:B8:BC:D1:66:62:01:ED:24:34:7D:8A:37:2F:CD:7B:B4:72:91:7B:79:CD:6C:F8:48:3D:05:95:C8:4B}")
     private val androidSha256CertFingerprints: String
 ) {
 
@@ -1049,7 +1049,8 @@ class PublicPageController(
             [
               {
                 "relation": [
-                  "delegate_permission/common.handle_all_urls"
+                  "delegate_permission/common.handle_all_urls",
+                  "delegate_permission/common.get_login_creds"
                 ],
                 "target": {
                   "namespace": "android_app",
